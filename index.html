@@ -481,8 +481,7 @@
         }
 
         // --- NEON WAVE GAME ---
-        let player = { x: 0, y: 0 }, walls = [], waveLvl = null, score = 0;
-        // Adjusted gaps and spacing to make it more reachable
+        let player = { x: 0, y: 0, trail: [] }, walls = [], waveLvl = null, score = 0;
         const WAVE_LEVELS = [
             { id: 1, speed: 5, gap: 350, color: '#00f2ff' },
             { id: 2, speed: 5.5, gap: 340, color: '#00e2ff' },
@@ -498,7 +497,7 @@
 
         let currentLevelPage = 0;
         const itemsPerPage = 4;
-        const HORIZONTAL_SPACING = 600; // Increased from 400 for better reachability
+        const HORIZONTAL_SPACING = 600;
 
         function renderWaveLevels() {
             const container = document.getElementById('level-grid-container');
@@ -538,7 +537,7 @@
             waveLvl = lvl; 
             isPlaying = true;
             score = 0;
-            player = { x: 200, y: canvas.height/2 };
+            player = { x: 200, y: canvas.height/2, trail: [] };
             walls = [];
             for(let i=0; i<3; i++) spawnWall(800 + i * HORIZONTAL_SPACING);
             document.getElementById('wave-over').classList.add('hidden');
@@ -566,6 +565,13 @@
                 if (activeGame === 'wave') {
                     player.x += waveLvl.speed;
                     player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
+                    
+                    // Update Trail
+                    player.trail.push({ x: player.x, y: player.y });
+                    // Trail length scales with score: base 15 + score * 5
+                    const maxTrail = 15 + (score * 5);
+                    if (player.trail.length > maxTrail) player.trail.shift();
+
                     if (player.y < 0 || player.y > canvas.height) { isPlaying = false; document.getElementById('wave-over').classList.remove('hidden'); }
                     walls.forEach(w => {
                         if (player.x + 10 > w.x && player.x - 10 < w.x + w.w) {
@@ -583,11 +589,38 @@
                 if (activeGame === 'clicker') { cookies += (cps / 60); updateClickerUI(); }
             }
             ctx.fillStyle = '#050510'; ctx.fillRect(0,0,canvas.width, canvas.height);
+            
             if (activeGame === 'wave') {
-                ctx.save(); ctx.translate(-player.x + 200, 0); ctx.fillStyle = waveLvl.color;
-                walls.forEach(w => { ctx.fillRect(w.x, 0, w.w, w.top); ctx.fillRect(w.x, w.bottom, w.w, canvas.height); ctx.shadowBlur = 15; ctx.shadowColor = waveLvl.color; });
-                ctx.shadowBlur = 20; ctx.shadowColor = 'white'; ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(player.x, player.y, 10, 0, Math.PI*2); ctx.fill(); ctx.restore();
+                ctx.save(); ctx.translate(-player.x + 200, 0); 
+                
+                // Draw Walls
+                ctx.fillStyle = waveLvl.color;
+                walls.forEach(w => { 
+                    ctx.fillRect(w.x, 0, w.w, w.top); 
+                    ctx.fillRect(w.x, w.bottom, w.w, canvas.height); 
+                    ctx.shadowBlur = 15; 
+                    ctx.shadowColor = waveLvl.color; 
+                });
+
+                // Draw Trail
+                if (player.trail.length > 1) {
+                    ctx.shadowBlur = 0;
+                    for (let i = 0; i < player.trail.length - 1; i++) {
+                        const alpha = (i / player.trail.length) * 0.6;
+                        const size = (i / player.trail.length) * 10;
+                        ctx.beginPath();
+                        ctx.arc(player.trail[i].x, player.trail[i].y, size, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                        ctx.fill();
+                    }
+                }
+
+                // Draw Player
+                ctx.shadowBlur = 20; ctx.shadowColor = 'white'; ctx.fillStyle = 'white'; 
+                ctx.beginPath(); ctx.arc(player.x, player.y, 10, 0, Math.PI*2); ctx.fill(); 
+                ctx.restore();
             }
+            
             if (activeGame === 'math') {
                 ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(canvas.width/2 - 150, 40, 300, 20);
                 ctx.fillStyle = mathEnergy > 30 ? varName('--neon-green') : varName('--neon-pink');
