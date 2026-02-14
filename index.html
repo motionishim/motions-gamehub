@@ -82,9 +82,6 @@
         .game-card.clicker { border-color: var(--neon-orange); }
         .game-card.clicker:hover { box-shadow: 0 0 30px rgba(255, 170, 0, 0.3); }
 
-        .game-card h2 { margin: 10px 0; font-size: 1.2rem; }
-        .game-card p { font-size: 0.8rem; color: #8af; }
-
         #back-to-menu {
             position: fixed;
             top: 20px;
@@ -131,7 +128,7 @@
             text-align: center;
             max-width: 90vw;
             box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            max-height: 80vh;
+            max-height: 90vh;
             display: flex;
             flex-direction: column;
         }
@@ -147,6 +144,30 @@
             margin-top: 10px;
             flex-shrink: 0;
         }
+
+        /* --- NEON WAVE SELECTOR ENHANCEMENTS --- */
+        .trail-customizer {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+        }
+        .color-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+        .color-dot:hover { transform: scale(1.2); }
+        .color-dot.active { border-color: white; transform: scale(1.1); box-shadow: 0 0 10px white; }
 
         /* --- COOKIE CLICKER UI --- */
         #clicker-ui {
@@ -256,7 +277,6 @@
 
         canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
 
-        /* Game specific overlays */
         #wave-ui, #math-ui {
             position: fixed;
             top: 0;
@@ -297,12 +317,25 @@
     <!-- Wave UI -->
     <div id="wave-level-select" class="screen hidden">
         <h2 style="color: var(--neon-blue); margin-top: 0; flex-shrink: 0;">SELECT LEVEL</h2>
+        
         <div class="level-grid" id="level-grid-container"></div>
         
         <div class="pagination-controls">
             <button class="page-btn" id="prev-page">PREV</button>
             <span id="page-indicator">Page 1 / 3</span>
             <button class="page-btn" id="next-page">NEXT</button>
+        </div>
+
+        <div class="trail-customizer">
+            <div style="font-size: 0.8rem; color: #aaa; text-transform: uppercase;">Trail Color</div>
+            <div class="color-options" id="trail-color-picker">
+                <div class="color-dot active" data-color="rgba(255, 255, 255, 1)" style="background: #fff"></div>
+                <div class="color-dot" data-color="rgba(0, 242, 255, 1)" style="background: var(--neon-blue)"></div>
+                <div class="color-dot" data-color="rgba(255, 0, 127, 1)" style="background: var(--neon-pink)"></div>
+                <div class="color-dot" data-color="rgba(0, 255, 136, 1)" style="background: var(--neon-green)"></div>
+                <div class="color-dot" data-color="rgba(255, 170, 0, 1)" style="background: var(--neon-orange)"></div>
+                <div class="color-dot" data-color="rgba(188, 19, 254, 1)" style="background: var(--neon-purple)"></div>
+            </div>
         </div>
 
         <button class="action-btn" id="close-level-select" style="background: #333; margin-top: 20px;">Back to Hub</button>
@@ -356,6 +389,7 @@
         let activeGame = null;
         let isPlaying = false;
         let keys = {};
+        let selectedTrailColor = "rgba(255, 255, 255, 1)";
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -436,6 +470,17 @@
             if (mode === 'clicker') startClicker();
         }
 
+        // --- TRAIL COLOR PICKER ---
+        const colorDots = document.querySelectorAll('.color-dot');
+        colorDots.forEach(dot => {
+            dot.onclick = () => {
+                colorDots.forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                selectedTrailColor = dot.getAttribute('data-color');
+                saveLocalData();
+            };
+        });
+
         // --- COOKIE CLICKER GAME ---
         let cookies = 0; let cps = 0; let clickPower = 1;
         const shopItems = [
@@ -465,8 +510,15 @@
             const items = document.querySelectorAll('.shop-item');
             shopItems.forEach((item, idx) => { if (items[idx]) { if (cookies < item.cost) items[idx].classList.add('disabled'); else items[idx].classList.remove('disabled'); }});
         }
+
+        // --- SAVE/LOAD ENHANCED ---
         function saveLocalData() {
-            const data = { cookies, shopItems, lastSaved: Date.now() };
+            const data = { 
+                cookies, 
+                shopItems, 
+                selectedTrailColor,
+                lastSaved: Date.now() 
+            };
             localStorage.setItem('matthews_hub_save', JSON.stringify(data));
             const status = document.getElementById('save-status');
             if (status) { status.style.opacity = 1; setTimeout(() => status.style.opacity = 0, 1000); }
@@ -474,8 +526,18 @@
         function loadLocalData() {
             const saved = localStorage.getItem('matthews_hub_save');
             if (saved) {
-                const data = JSON.parse(saved); cookies = data.cookies;
-                data.shopItems.forEach((savedItem, i) => { if (shopItems[i]) { shopItems[i].owned = savedItem.owned; shopItems[i].cost = savedItem.cost; }});
+                const data = JSON.parse(saved); 
+                cookies = data.cookies || 0;
+                if (data.shopItems) {
+                    data.shopItems.forEach((savedItem, i) => { if (shopItems[i]) { shopItems[i].owned = savedItem.owned; shopItems[i].cost = savedItem.cost; }});
+                }
+                if (data.selectedTrailColor) {
+                    selectedTrailColor = data.selectedTrailColor;
+                    colorDots.forEach(dot => {
+                        dot.classList.remove('active');
+                        if (dot.getAttribute('data-color') === selectedTrailColor) dot.classList.add('active');
+                    });
+                }
                 calculateStats();
             }
         }
@@ -566,9 +628,7 @@
                     player.x += waveLvl.speed;
                     player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
                     
-                    // Update Trail
                     player.trail.push({ x: player.x, y: player.y });
-                    // Trail length scales with score: base 15 + score * 5
                     const maxTrail = 15 + (score * 5);
                     if (player.trail.length > maxTrail) player.trail.shift();
 
@@ -602,15 +662,17 @@
                     ctx.shadowColor = waveLvl.color; 
                 });
 
-                // Draw Trail
+                // Draw Trail with Custom Color
                 if (player.trail.length > 1) {
                     ctx.shadowBlur = 0;
                     for (let i = 0; i < player.trail.length - 1; i++) {
-                        const alpha = (i / player.trail.length) * 0.6;
+                        const alpha = (i / player.trail.length) * 0.8;
                         const size = (i / player.trail.length) * 10;
                         ctx.beginPath();
                         ctx.arc(player.trail[i].x, player.trail[i].y, size, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                        // Modify selectedTrailColor string to add alpha
+                        const baseColor = selectedTrailColor.replace("1)", alpha + ")");
+                        ctx.fillStyle = baseColor;
                         ctx.fill();
                     }
                 }
@@ -633,6 +695,8 @@
         window.onkeyup = (e) => keys[e.key] = false;
         window.ontouchstart = () => keys['touchstart'] = true;
         window.ontouchend = () => keys['touchstart'] = false;
+        
+        loadLocalData();
         loop();
     </script>
 </body>
