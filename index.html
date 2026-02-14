@@ -143,6 +143,9 @@
         .game-card.clicker::before { background: var(--neon-orange); }
         .game-card.clicker:hover { border-color: var(--neon-orange); box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(255, 170, 0, 0.2); }
 
+        .game-card h2 { font-size: 1.3rem; margin: 15px 0 10px 0; font-weight: 800; letter-spacing: 1px; }
+        .game-card p { font-size: 0.85rem; color: #aaa; line-height: 1.4; }
+
         .btn-ui {
             background: var(--glass);
             border: 1px solid var(--glass-border);
@@ -229,7 +232,7 @@
             z-index: 500;
         }
         .clicker-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; position: relative; }
-        .clicker-shop { width: 380px; padding: 30px; background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border-left: 1px solid var(--glass-border); overflow-y: auto; }
+        .clicker-shop { width: 420px; padding: 30px; background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border-left: 1px solid var(--glass-border); overflow-y: auto; }
         
         #big-cookie { 
             width: 240px; height: 240px; 
@@ -400,6 +403,27 @@
         .option-group { margin: 15px 0; }
         .option-label { font-size: 0.7rem; text-transform: uppercase; color: var(--neon-pink); letter-spacing: 2px; display: block; margin-bottom: 8px; }
         #math-input { transition: 0.2s; }
+
+        /* Offline Alert */
+        #offline-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--neon-blue);
+            color: black;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 900;
+            z-index: 3000;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.5);
+            display: none;
+            animation: slideDown 0.5s ease-out;
+        }
+        @keyframes slideDown {
+            from { transform: translate(-50%, -100%); }
+            to { transform: translate(-50%, 0); }
+        }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -418,6 +442,8 @@
         <div class="music-item" data-track="synth"><span>🕹️</span> Retro Synth</div>
     </div>
 
+    <div id="save-indicator">Game Saved</div>
+    <div id="offline-alert"></div>
     <div class="owner-tag">Arcade by <span>Matthew</span></div>
 
     <!-- Main Hub -->
@@ -540,7 +566,13 @@
             </div>
             <div id="big-cookie">🍪</div>
         </div>
-        <div class="clicker-shop" id="shop-container"></div>
+        <div class="clicker-shop">
+            <div class="shop-header">
+                <h3 style="margin: 0; letter-spacing: 2px; text-transform: uppercase;">Bakery Shop</h3>
+                <span style="font-size: 0.7rem; color: var(--neon-blue);">UPGRADES</span>
+            </div>
+            <div id="shop-container"></div>
+        </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -655,7 +687,6 @@
         function genMath() {
             let n1, n2, symbol; const diff = mathConfig.diff; const op = mathConfig.op;
             
-            // Define ranges based on difficulty
             let maxVal = 10;
             if(diff === 'medium') maxVal = 25;
             if(diff === 'hard') maxVal = 100;
@@ -679,9 +710,8 @@
                 mathAns = n1 * n2; symbol = '×'; 
             }
             else if (op === '/') {
-                // Ensure whole number division
                 let divisorMax = diff === 'easy' ? 5 : (diff === 'medium' ? 10 : (diff === 'hard' ? 12 : (diff === 'insane' ? 20 : 25)));
-                n2 = Math.floor(Math.random() * (divisorMax - 2)) + 2; // Divisor > 1
+                n2 = Math.floor(Math.random() * (divisorMax - 2)) + 2; 
                 let ans = Math.floor(Math.random() * (diff === 'easy' ? 5 : (diff === 'medium' ? 10 : (diff === 'hard' ? 15 : (diff === 'insane' ? 20 : 50))))) + 1; 
                 n1 = ans * n2;
                 mathAns = ans; symbol = '÷';
@@ -695,7 +725,6 @@
             if(mathConfig.diff === 'hard') gain = 10;
             if(mathConfig.diff === 'insane') gain = 8;
             if(mathConfig.diff === 'extreme') gain = 5;
-            
             mathEnergy = Math.min(100, mathEnergy + gain);
             document.getElementById('math-input').value = '';
             genMath();
@@ -715,7 +744,6 @@
         mathInput.oninput = (e) => {
             if(parseInt(e.target.value) === mathAns) handleCorrectMath();
         };
-        
         mathInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 if (parseInt(mathInput.value) === mathAns) handleCorrectMath();
@@ -723,11 +751,92 @@
             }
         });
 
-        // --- CLICKER ---
-        let cookies = 0;
-        function startClicker() { isPlaying = true; updateClickerUI(); }
-        document.getElementById('big-cookie').onclick = (e) => { cookies++; updateClickerUI(); MusicEngine.triggerNote(400, 0.05, 0.05); };
-        function updateClickerUI() { document.getElementById('cookie-count').innerText = Math.floor(cookies); }
+        // --- COOKIE CRUNCH ---
+        let cookies = 0; let clickPower = 1; let cookiesPerSecond = 0;
+        
+        const shopItems = [
+            { id: 'c1', name: 'Reinforced Finger', type: 'click', cost: 15, power: 1, owned: 0, icon: '👆', desc: 'Each click yields +1 cookie.' },
+            { id: 'c2', name: 'Titanium Tapper', type: 'click', cost: 500, power: 10, owned: 0, icon: '⚡', desc: 'Precision clicking (+10/click).' },
+            { id: 'c3', name: 'Plasma Pointer', type: 'click', cost: 10000, power: 50, owned: 0, icon: '🔫', desc: 'High-energy clicking (+50/click).' },
+            { id: 'c4', name: 'Quantum Mouse', type: 'click', cost: 1000000, power: 500, owned: 0, icon: '🖱️', desc: 'Clicks in multiple dimensions (+500/click).' },
+            { id: 'c5', name: 'God Finger', type: 'click', cost: 50000000, power: 5000, owned: 0, icon: '👍', desc: 'Divine clicking power (+5000/click).' },
+            { id: 'a1', name: 'Auto-Cursor', type: 'auto', cost: 100, cps: 1, owned: 0, icon: '🖱️', desc: 'Clicks automatically once every second.' },
+            { id: 'a2', name: 'Cookie Grandma', type: 'auto', cost: 500, cps: 5, owned: 0, icon: '👵', desc: 'Bakes fresh cookies steadily.' },
+            { id: 'a3', name: 'Cookie Farm', type: 'auto', cost: 2500, cps: 18, owned: 0, icon: '🚜', desc: 'Grows cookie plants.' },
+            { id: 'a4', name: 'Cookie Factory', type: 'auto', cost: 10000, cps: 55, owned: 0, icon: '🏭', desc: 'Mass produces treats.' },
+            { id: 'a5', name: 'Cookie Bank', type: 'auto', cost: 50000, cps: 160, owned: 0, icon: '🏦', desc: 'Generates interest in cookies.' },
+            { id: 'a6', name: 'Alchemy Lab', type: 'auto', cost: 200000, cps: 450, owned: 0, icon: '🧪', desc: 'Transmutes gold into cookies.' },
+            { id: 'a7', name: 'Portal', type: 'auto', cost: 1000000, cps: 1200, owned: 0, icon: '🌀', desc: 'Opens a portal to the Cookieverse.' },
+            { id: 'a8', name: 'Time Machine', type: 'auto', cost: 15000000, cps: 8000, owned: 0, icon: '⏳', desc: 'Retrieves cookies from the past.' },
+            { id: 'a9', name: 'Antimatter Condenser', type: 'auto', cost: 100000000, cps: 30000, owned: 0, icon: '⚛️', desc: 'Condenses universe into cookies.' },
+            { id: 'a10', name: 'Prism', type: 'auto', cost: 2000000000, cps: 150000, owned: 0, icon: '🌈', desc: 'Converts light into cookies.' },
+            { id: 'a11', name: 'Chancemaker', type: 'auto', cost: 30000000000, cps: 1000000, owned: 0, icon: '🍀', desc: 'Generates cookies from luck.' },
+            { id: 'a12', name: 'Fractal Engine', type: 'auto', cost: 500000000000, cps: 8000000, owned: 0, icon: '💠', desc: 'Cookies made of cookies.' }
+        ];
+
+        function startClicker() { loadGame(); isPlaying = true; updateClickerUI(); }
+        
+        document.getElementById('big-cookie').addEventListener('mousedown', (e) => { 
+            cookies += clickPower; 
+            AudioEngine.triggerNote(400, 0.05, 0.05); 
+            spawnFloatingText(e.clientX, e.clientY, `+${clickPower}`); 
+            updateClickerUI(); 
+        });
+
+        function spawnFloatingText(x, y, text) {
+            const el = document.createElement('div'); el.className = 'floating-text'; el.innerText = text;
+            el.style.left = `${x}px`; el.style.top = `${y}px`;
+            document.querySelector('.clicker-main').appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+
+        function updateClickerUI() {
+            document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
+            document.getElementById('cps-val').innerText = cookiesPerSecond.toLocaleString();
+            document.getElementById('cpc-val').innerText = clickPower.toLocaleString();
+            renderShop();
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+            shopItems.forEach((item) => {
+                const canAfford = cookies >= item.cost;
+                const div = document.createElement('div');
+                div.className = `shop-item ${canAfford ? 'affordable' : 'locked'}`;
+                div.innerHTML = `<div style="display:flex;align-items:center;"><span class="item-icon">${item.icon}</span><div class="item-details"><span class="item-name">${item.name}</span><span class="item-cost">Cost: ${Math.floor(item.cost).toLocaleString()}</span><div style="font-size: 0.6rem; opacity: 0.6; margin-top: 4px;">${item.desc}</div></div><div class="item-owned">${item.owned}</div></div>`;
+                div.onclick = () => { if (cookies >= item.cost) { cookies -= item.cost; item.owned++; if (item.type === 'click') clickPower += item.power; else cookiesPerSecond += item.cps; item.cost = Math.ceil(item.cost * 1.15); MusicEngine.triggerNote(600 + (item.owned * 5), 0.1, 0.1); updateClickerUI(); saveGame(); } };
+                container.appendChild(div);
+            });
+        }
+
+        function saveGame() { 
+            localStorage.setItem('cookieCrunchSave', JSON.stringify({
+                cookies, clickPower, cps: cookiesPerSecond, lastUpdate: Date.now(), 
+                items: shopItems.map(i => ({ id: i.id, owned: i.owned, cost: i.cost }))
+            })); 
+            const ind = document.getElementById('save-indicator'); ind.style.opacity = 1; setTimeout(() => ind.style.opacity = 0, 2000);
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('cookieCrunchSave');
+            if (saved) {
+                const data = JSON.parse(saved);
+                cookies = data.cookies || 0; clickPower = data.clickPower || 1; cookiesPerSecond = data.cps || 0;
+                data.items.forEach(si => { const i = shopItems.find(x => x.id === si.id); if (i) { i.owned = si.owned; i.cost = si.cost; } });
+                if (data.lastUpdate) {
+                    const secondsPassed = Math.floor((Date.now() - data.lastUpdate) / 1000);
+                    if (secondsPassed > 5 && cookiesPerSecond > 0) { 
+                        const earned = secondsPassed * cookiesPerSecond; 
+                        cookies += earned; 
+                        const alert = document.getElementById('offline-alert');
+                        alert.innerText = `Welcome back! You earned ${Math.floor(earned).toLocaleString()} cookies while away!`;
+                        alert.style.display = 'block'; setTimeout(() => alert.style.display = 'none', 5000);
+                    }
+                }
+            }
+        }
+        setInterval(() => { if (activeGame === 'clicker') saveGame(); }, 5000);
 
         // --- NAVIGATION ---
         const mainMenu = document.getElementById('main-menu');
@@ -736,7 +845,7 @@
         document.getElementById('card-math').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('math-select-screen').classList.remove('hidden'); backBtn.style.display='block'; };
         document.getElementById('card-clicker').onclick = () => switchGame('clicker');
         document.getElementById('close-level-select').onclick = () => { document.getElementById('wave-level-select').classList.add('hidden'); mainMenu.classList.remove('hidden'); backBtn.style.display='none'; };
-        backBtn.onclick = () => { activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen').forEach(el=>el.classList.add('hidden')); document.getElementById('math-input').blur(); };
+        backBtn.onclick = () => { if(activeGame==='clicker') saveGame(); activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen').forEach(el=>el.classList.add('hidden')); document.getElementById('math-input').blur(); };
 
         function switchGame(mode, data) {
             activeGame = mode; mainMenu.classList.add('hidden'); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -753,15 +862,10 @@
                 if (activeGame === 'wave') {
                     player.x += waveLvl.speed; 
                     player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
-                    
                     let c = currentTrailColor === 'rainbow' ? `hsl(${(player.x / 5) % 360}, 100%, 60%)` : currentTrailColor;
-                    player.trail.push({x: player.x, y: player.y, color: c}); 
-                    if(player.trail.length > 60) player.trail.shift();
-
+                    player.trail.push({x: player.x, y: player.y, color: c}); if(player.trail.length > 60) player.trail.shift();
                     if(player.y < 0 || player.y > canvas.height) triggerGameOver(score);
-                    walls.forEach(w => { 
-                        if(player.x+10 > w.x && player.x-10 < w.x+w.w && (player.y-10 < w.top || player.y+10 > w.bottom)) triggerGameOver(score); 
-                    });
+                    walls.forEach(w => { if(player.x+10 > w.x && player.x-10 < w.x+w.w && (player.y-10 < w.top || player.y+10 > w.bottom)) triggerGameOver(score); });
                     if(player.x > walls[0].x + 400) { walls.shift(); spawnWall(walls[walls.length-1].x+600); score++; document.getElementById('wave-score-container').innerText = score; }
                 }
                 if (activeGame === 'math') { 
@@ -773,67 +877,27 @@
                     mathEnergy -= drain; 
                     if (mathEnergy <= 0) triggerGameOver(score, "TIME OUT"); 
                 }
+                if (activeGame === 'clicker') { 
+                    cookies += cookiesPerSecond / 60; 
+                    document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
+                    if (Math.floor(Date.now() / 500) % 2 === 0) { // Optimize Shop Updates
+                        const itemEls = document.querySelectorAll('.shop-item');
+                        shopItems.forEach((item, i) => { if (cookies >= item.cost) itemEls[i]?.classList.add('affordable'); else itemEls[i]?.classList.remove('affordable'); });
+                    }
+                }
             }
+            
             ctx.clearRect(0,0,canvas.width, canvas.height);
             
             if (activeGame === 'wave' && (isPlaying || !document.getElementById('game-over-screen').classList.contains('hidden'))) {
-                ctx.save();
-                ctx.translate(-player.x + 250, 0); 
-                
-                // Draw Walls
-                ctx.shadowBlur = 15; ctx.shadowColor = waveLvl.color;
-                ctx.fillStyle = waveLvl.color;
-                walls.forEach(w => { 
-                    ctx.fillRect(w.x, 0, w.w, w.top); 
-                    ctx.fillRect(w.x, w.bottom, w.w, canvas.height); 
-                });
-                
+                ctx.save(); ctx.translate(-player.x + 250, 0); 
+                ctx.shadowBlur = 15; ctx.shadowColor = waveLvl.color; ctx.fillStyle = waveLvl.color;
+                walls.forEach(w => { ctx.fillRect(w.x, 0, w.w, w.top); ctx.fillRect(w.x, w.bottom, w.w, canvas.height); });
                 ctx.shadowBlur = 0;
-                if(currentTrailType === 'classic') {
-                    ctx.lineWidth = 6;
-                    ctx.lineCap = 'round';
-                    for(let i = 1; i < player.trail.length; i++) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = player.trail[i].color;
-                        ctx.moveTo(player.trail[i-1].x, player.trail[i-1].y);
-                        ctx.lineTo(player.trail[i].x, player.trail[i].y);
-                        ctx.stroke();
-                    }
-                } 
-                else if(currentTrailType === 'pulse') {
-                    player.trail.forEach((p, i) => {
-                        let opacity = i / player.trail.length;
-                        let size = (i / player.trail.length) * 12;
-                        ctx.fillStyle = p.color;
-                        ctx.globalAlpha = opacity * 0.6;
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
-                        ctx.fill();
-                    });
-                    ctx.globalAlpha = 1.0;
-                }
-                else if(currentTrailType === 'ghost') {
-                    ctx.lineWidth = 14;
-                    ctx.lineJoin = 'round';
-                    for(let i = 1; i < player.trail.length; i++) {
-                        ctx.beginPath();
-                        ctx.globalAlpha = (i / player.trail.length) * 0.5;
-                        ctx.strokeStyle = player.trail[i].color;
-                        ctx.shadowBlur = 10;
-                        ctx.shadowColor = player.trail[i].color;
-                        ctx.moveTo(player.trail[i-1].x, player.trail[i-1].y);
-                        ctx.lineTo(player.trail[i].x, player.trail[i].y);
-                        ctx.stroke();
-                    }
-                    ctx.globalAlpha = 1.0;
-                    ctx.shadowBlur = 0;
-                }
-                
-                // Draw Player
-                ctx.fillStyle = 'white'; 
-                ctx.shadowBlur = 15; ctx.shadowColor = 'white';
-                ctx.beginPath(); ctx.arc(player.x, player.y, 8, 0, Math.PI*2); ctx.fill();
-                ctx.restore();
+                if(currentTrailType === 'classic') { ctx.lineWidth = 6; ctx.lineCap = 'round'; for(let i = 1; i < player.trail.length; i++) { ctx.beginPath(); ctx.strokeStyle = player.trail[i].color; ctx.moveTo(player.trail[i-1].x, player.trail[i-1].y); ctx.lineTo(player.trail[i].x, player.trail[i].y); ctx.stroke(); } } 
+                else if(currentTrailType === 'pulse') { player.trail.forEach((p, i) => { let opacity = i / player.trail.length; let size = (i / player.trail.length) * 12; ctx.fillStyle = p.color; ctx.globalAlpha = opacity * 0.6; ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, Math.PI * 2); ctx.fill(); }); ctx.globalAlpha = 1.0; }
+                else if(currentTrailType === 'ghost') { ctx.lineWidth = 14; ctx.lineJoin = 'round'; for(let i = 1; i < player.trail.length; i++) { ctx.beginPath(); ctx.globalAlpha = (i / player.trail.length) * 0.5; ctx.strokeStyle = player.trail[i].color; ctx.shadowBlur = 10; ctx.shadowColor = player.trail[i].color; ctx.moveTo(player.trail[i-1].x, player.trail[i-1].y); ctx.lineTo(player.trail[i].x, player.trail[i].y); ctx.stroke(); } ctx.globalAlpha = 1.0; ctx.shadowBlur = 0; }
+                ctx.fillStyle = 'white'; ctx.shadowBlur = 15; ctx.shadowColor = 'white'; ctx.beginPath(); ctx.arc(player.x, player.y, 8, 0, Math.PI*2); ctx.fill(); ctx.restore();
             }
             
             if (activeGame === 'math' && (isPlaying || !document.getElementById('game-over-screen').classList.contains('hidden'))) {
@@ -844,7 +908,7 @@
         }
 
         window.onkeydown = (e) => keys[e.key] = true; window.onkeyup = (e) => keys[e.key] = false;
-        window.ontouchstart = (e) => { if(!e.target.closest('.btn-ui, #math-input, #big-cookie, .trail-option, .color-dot')) keys['touchstart'] = true; };
+        window.ontouchstart = (e) => { if(!e.target.closest('.btn-ui, #math-input, #big-cookie, .trail-option, .color-dot, .shop-item, #music-panel')) keys['touchstart'] = true; };
         window.ontouchend = () => keys['touchstart'] = false;
         document.getElementById('music-menu-btn').onclick = () => { const p = document.getElementById('music-panel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; };
         document.querySelectorAll('.music-item').forEach(i => i.onclick = () => MusicEngine.playProceduralTrack(i.dataset.track));
