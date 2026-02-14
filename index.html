@@ -231,25 +231,8 @@
             background: #020208;
             z-index: 500;
         }
-        .clicker-main { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 40px; 
-            position: relative; 
-        }
-        .clicker-shop { 
-            width: 420px; 
-            padding: 20px; 
-            background: rgba(255,255,255,0.02); 
-            backdrop-filter: blur(20px); 
-            border-left: 1px solid var(--glass-border); 
-            overflow-y: auto; 
-            display: flex;
-            flex-direction: column;
-        }
+        .clicker-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; position: relative; }
+        .clicker-shop { width: 420px; padding: 20px; background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border-left: 1px solid var(--glass-border); overflow-y: auto; display: flex; flex-direction: column; }
         
         #big-cookie { 
             width: 240px; height: 240px; 
@@ -343,7 +326,7 @@
                 width: 100%; 
                 border-left: none; 
                 border-top: 1px solid var(--glass-border); 
-                height: 50%; /* Explicit height for scrolling */
+                height: 50%; 
                 min-height: 300px;
             }
             .clicker-main { height: 50%; min-height: 300px; padding: 20px; }
@@ -565,10 +548,51 @@
     <script>
         // --- AUDIO ---
         const MusicEngine = {
-            ctx: null, gainNode: null, currentTrack: 'off',
-            init() { if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.gainNode = this.ctx.createGain(); this.gainNode.gain.value = 0.3; this.gainNode.connect(this.ctx.destination); } },
-            playProceduralTrack(type) { this.init(); this.currentTrack = type; document.getElementById('music-menu-btn').innerText = `🎵 Track: ${type.toUpperCase()}`; },
-            triggerNote(freq, vol, duration, type='sine') { if(!this.ctx) return; const osc = this.ctx.createOscillator(); const g = this.ctx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime); g.gain.setValueAtTime(vol * 0.3, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration); osc.connect(g); g.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration); }
+            ctx: null, gainNode: null, currentTrack: 'off', isPlaying: false,
+            init() { 
+                if (!this.ctx) { 
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+                    this.gainNode = this.ctx.createGain(); 
+                    this.gainNode.gain.value = 0.3; 
+                    this.gainNode.connect(this.ctx.destination); 
+                }
+                if (this.ctx.state === 'suspended') { this.ctx.resume(); }
+            },
+            playProceduralTrack(type) { 
+                this.stop(); 
+                if (type === 'off') { document.getElementById('music-menu-btn').innerText = '🎵 Music: Off'; return; }
+                this.init(); this.isPlaying = true; this.currentTrack = type; 
+                document.getElementById('music-menu-btn').innerText = `🎵 Track: ${type.toUpperCase()}`; 
+                this.loopProcedural(type);
+            },
+            speak(text, pitch = 1, rate = 1) {
+                if (this.gainNode.gain.value === 0) return;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.pitch = pitch; utterance.rate = rate; utterance.volume = 0.5;
+                window.speechSynthesis.speak(utterance);
+            },
+            async loopProcedural(type) {
+                let step = 0;
+                while (this.isPlaying && this.currentTrack === type) {
+                    if (type === 'lofi') { this.triggerNote([261, 329, 392, 493][step % 4], 0.1, 0.8, 'triangle'); await new Promise(r => setTimeout(r, 800)); } 
+                    else if (type === 'rap') { 
+                        if (step % 2 === 0) this.triggerNote(60, 0.3, 0.4, 'sine'); 
+                        if (step % 4 === 2) this.triggerNote(1200, 0.05, 0.1, 'square'); 
+                        if (step % 8 === 0) this.speak(['Yeah', 'Let\'s Go', 'Uh', 'Check it'][Math.floor(Math.random()*4)], 0.8, 1.5);
+                        await new Promise(r => setTimeout(r, 200)); 
+                    }
+                    else if (type === 'mexican') { 
+                        this.triggerNote([392, 440, 493, 523, 587][Math.floor(Math.random() * 5)], 0.15, 0.3, 'sawtooth'); 
+                        if (step % 16 === 0) this.speak(['Uno', 'Dos', 'Fiesta', 'Arriba'][Math.floor(Math.random()*4)], 1.2, 1.2);
+                        await new Promise(r => setTimeout(r, 250)); 
+                    }
+                    else if (type === 'synth') { this.triggerNote([220, 261, 329, 392, 440, 523][step % 6], 0.1, 0.4, 'square'); await new Promise(r => setTimeout(r, 150)); }
+                    step++;
+                }
+            },
+            triggerNote(freq, vol, duration, type='sine') { if(!this.ctx) return; const osc = this.ctx.createOscillator(); const g = this.ctx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime); g.gain.setValueAtTime(vol * 0.3, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration); osc.connect(g); g.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration); },
+            stop() { this.isPlaying = false; },
+            setVolume(v) { if(this.gainNode) this.gainNode.gain.value = v; }
         };
 
         // --- BACKGROUND ---
