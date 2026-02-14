@@ -370,6 +370,17 @@
             background: var(--neon-yellow);
             transition: 0.1s;
         }
+        
+        .trick-hint {
+            position: fixed;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+            text-align: center;
+            letter-spacing: 1px;
+        }
 
         /* Standard Game UIs */
         .screen {
@@ -609,7 +620,10 @@
         <div class="bike-hud-el" id="bike-dist">0 m</div>
         <div class="bike-hud-el" id="bike-score">0 pts</div>
     </div>
-    <div id="wheelie-meter" class="wheelie-meter hidden"><div class="wheelie-bar" id="wheelie-bar"></div></div>
+    <div id="wheelie-meter" class="wheelie-meter hidden">
+        <div class="wheelie-bar" id="wheelie-bar"></div>
+        <div class="trick-hint">R: No-Hand | T: No-Foot | Y: Superman</div>
+    </div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -671,7 +685,7 @@
         window.addEventListener('resize', resize); resize();
 
         // --- SURRON BIKE GAME ---
-        let bike = { x: 100, y: 0, dy: 0, angle: 0, wheelie: 0, type: 'surron' };
+        let bike = { x: 100, y: 0, dy: 0, angle: 0, wheelie: 0, type: 'surron', trick: null };
         let bikeScore = 0;
         let bikeDistance = 0;
         let cityBuildings = [];
@@ -679,7 +693,7 @@
         let cityTrees = [];
 
         function startBike() {
-            bike = { x: 200, y: canvas.height - 150, dy: 0, angle: 0, wheelie: 0, type: selectedBikeType };
+            bike = { x: 200, y: canvas.height - 150, dy: 0, angle: 0, wheelie: 0, type: selectedBikeType, trick: null };
             bikeScore = 0;
             bikeDistance = 0;
             cityBuildings = [];
@@ -710,35 +724,47 @@
         }
 
         function updateBike() {
-            let speed = bike.type === 'surron' ? 12 : 14; 
+            let speed = bike.type === 'surron' ? 8 : 10; 
             
-            // Adjusted physics for smoother control
-            // Lower numbers = slower rotation
-            let pullUpSpeed = bike.type === 'surron' ? 0.04 : 0.025; 
-            let dropDownSpeed = bike.type === 'surron' ? 0.06 : 0.04;
+            // Adjusted physics: Significantly slower rotation for easier balancing
+            let pullUpSpeed = bike.type === 'surron' ? 0.012 : 0.008; 
+            let dropDownSpeed = bike.type === 'surron' ? 0.02 : 0.015;
             
             bikeDistance += speed/10;
+
+            // --- TRICK LOGIC RESTORED ---
+            bike.trick = null;
+            // You can only do tricks while holding a wheelie (angle < -0.4)
+            if (bike.angle < -0.4) { 
+                if (keys['r']) bike.trick = 'nohand';
+                if (keys['t']) bike.trick = 'nofoot';
+                if (keys['y']) bike.trick = 'superman';
+            }
             
+            // Target is now PAST the crash point, so holding it causes a loop out
             let targetAngle = 0;
             let rotationSpeed = 0;
 
-            if (keys['Shift']) {
-                targetAngle = -2.5; // Target is past loop-out to force balancing
+            if (keys['shift']) {
+                targetAngle = -2.5; 
                 rotationSpeed = pullUpSpeed;
             } else {
-                targetAngle = 0; // Flat on ground
+                targetAngle = 0;
                 rotationSpeed = dropDownSpeed;
             }
             
-            // Apply rotation with specific speed based on direction
+            // Apply rotation
             bike.angle += (targetAngle - bike.angle) * rotationSpeed;
             
             // LOOP OUT LOGIC - Approx 115 degrees = -2.0 radians
             if (bike.angle < -2.0) triggerGameOver(Math.floor(bikeScore), "LOOPED OUT!");
 
             // Scoring Range
+            let multiplier = 1;
+            if (bike.trick) multiplier = 2.5;
+
             if (bike.angle < -0.4 && bike.angle > -1.9) {
-                bikeScore += 2;
+                bikeScore += 2 * multiplier;
                 document.getElementById('wheelie-bar').style.width = `${Math.min(100, (Math.abs(bike.angle)-0.4)*80)}%`;
             } else {
                 bikeScore += 0.5;
@@ -762,69 +788,145 @@
         function drawBikeGame() {
             // Sky
             let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, "#020205"); grad.addColorStop(1, "#1a1a4a");
+            grad.addColorStop(0, "#050520"); grad.addColorStop(1, "#2a2a6a");
             ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Skyline (Far)
-            ctx.fillStyle = '#050515';
-            skyline.forEach(b => ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h));
+            // Skyline
+            ctx.fillStyle = '#0a0a30';
+            skyline.forEach(b => {
+                ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h);
+                if(b.h > 300) { ctx.fillStyle = 'red'; ctx.fillRect(b.x + b.w/2, canvas.height - b.h - 5, 2, 5); ctx.fillStyle = '#0a0a30'; }
+            });
 
-            // Buildings (Mid)
+            // Buildings (Bright City)
             cityBuildings.forEach(b => {
-                ctx.fillStyle = '#0a0a20'; ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h);
-                ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.strokeRect(b.x, canvas.height - b.h, b.w, b.h);
-                // Glowing Windows
-                ctx.fillStyle = 'rgba(255, 255, 100, 0.4)'; ctx.shadowBlur = 5; ctx.shadowColor = 'yellow';
-                b.windows.forEach(w => ctx.fillRect(b.x + w.x, canvas.height - b.h + w.y, 10, 20));
+                ctx.fillStyle = '#101025'; ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h);
+                ctx.strokeStyle = `hsl(${b.x % 360}, 70%, 50%)`; ctx.lineWidth = 2; ctx.strokeRect(b.x, canvas.height - b.h, b.w, b.h);
+                ctx.fillStyle = 'rgba(255, 255, 200, 0.8)'; ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(255,255,200,0.5)';
+                b.windows.forEach(w => ctx.fillRect(b.x + w.x, canvas.height - b.h + w.y, 10, 18));
                 ctx.shadowBlur = 0;
             });
 
             // Road
-            ctx.fillStyle = '#151515'; ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
-            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.setLineDash([40, 60]); ctx.lineDashOffset = -bikeDistance * 10;
-            ctx.beginPath(); ctx.moveTo(0, canvas.height - 40); ctx.lineTo(canvas.width, canvas.height - 40); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.shadowBlur = 10; ctx.shadowColor = 'white';
+            ctx.setLineDash([40, 60]); ctx.lineDashOffset = -bikeDistance * 10;
+            ctx.beginPath(); ctx.moveTo(0, canvas.height - 40); ctx.lineTo(canvas.width, canvas.height - 40); ctx.stroke(); ctx.setLineDash([]); ctx.shadowBlur = 0;
 
-            // Trees (Foreground)
+            // Trees
             cityTrees.forEach(t => {
                 let y = canvas.height - 100;
-                ctx.fillStyle = '#0d0d0d'; ctx.fillRect(t.x + 10, y - t.h, 10, t.h); // Trunk
-                ctx.fillStyle = '#003300'; ctx.beginPath(); ctx.arc(t.x + 15, y - t.h, 30, 0, Math.PI*2); ctx.fill(); // Leaves
+                ctx.fillStyle = '#150a05'; ctx.fillRect(t.x + 8, y - t.h/2, 14, t.h/2);
+                ctx.fillStyle = '#003300'; ctx.beginPath(); 
+                ctx.arc(t.x + 15, y - t.h/2, 25, 0, Math.PI*2); ctx.arc(t.x + 5, y - t.h/2 - 10, 20, 0, Math.PI*2); ctx.arc(t.x + 25, y - t.h/2 - 10, 20, 0, Math.PI*2); 
+                ctx.fill(); 
             });
 
             // Draw Bike
             ctx.save(); ctx.translate(bike.x, canvas.height - 100); ctx.rotate(bike.angle);
-            
-            ctx.shadowBlur = 10; ctx.shadowColor = bike.type === 'surron' ? '#00f2ff' : '#ff4d4d';
-            ctx.strokeStyle = bike.type === 'surron' ? '#00f2ff' : '#ff4d4d'; ctx.lineWidth = 4;
-            
-            // Wheels
-            ctx.beginPath(); ctx.arc(0, -18, 18, 0, Math.PI*2); ctx.stroke(); // Back
-            ctx.beginPath(); ctx.arc(65, -18, 18, 0, Math.PI*2); ctx.stroke(); // Front
 
-            // Frame
             if (bike.type === 'surron') {
-                // X Frame
-                ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(35, -55); ctx.lineTo(65, -18);
-                ctx.moveTo(35, -55); ctx.lineTo(20, -55); // Seat
-                ctx.moveTo(35, -55); ctx.lineTo(50, -70); // Handlebars
-                ctx.stroke();
+                // SURRON X (Realistic)
+                // Wheels
+                ctx.lineWidth = 2; ctx.strokeStyle = '#333'; ctx.fillStyle = '#111';
+                // Rear Wheel
+                ctx.beginPath(); ctx.arc(0, -19, 19, 0, Math.PI*2); ctx.fill(); ctx.stroke(); 
+                ctx.strokeStyle='#555'; ctx.beginPath(); ctx.arc(0, -19, 14, 0, Math.PI*2); ctx.stroke(); // Rim
+                for(let i=0; i<8; i++) { let a = (i/8)*Math.PI*2 - bikeDistance; ctx.beginPath(); ctx.moveTo(0,-19); ctx.lineTo(Math.cos(a)*14, -19+Math.sin(a)*14); ctx.stroke(); } // Spokes
+                
+                // Front Wheel
+                ctx.strokeStyle='#333'; ctx.beginPath(); ctx.arc(68, -19, 19, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.strokeStyle='#555'; ctx.beginPath(); ctx.arc(68, -19, 14, 0, Math.PI*2); ctx.stroke();
+                for(let i=0; i<8; i++) { let a = (i/8)*Math.PI*2 - bikeDistance; ctx.beginPath(); ctx.moveTo(68,-19); ctx.lineTo(68+Math.cos(a)*14, -19+Math.sin(a)*14); ctx.stroke(); }
+
+                // Swingarm
+                ctx.strokeStyle = '#222'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, -19); ctx.lineTo(28, -38); ctx.stroke();
+
+                // Frame (X)
+                let grad = ctx.createLinearGradient(30, -70, 50, -30); grad.addColorStop(0, '#222'); grad.addColorStop(1, '#444');
+                ctx.fillStyle = grad; ctx.beginPath(); ctx.moveTo(28, -38); ctx.lineTo(55, -75); ctx.lineTo(45, -25); ctx.lineTo(28, -38); ctx.fill();
+
                 // Battery
-                ctx.fillStyle = '#222'; ctx.fillRect(25, -45, 15, 20);
+                ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect(30, -65, 20, 30, 2); ctx.fill();
+                ctx.fillStyle = '#00f2ff'; ctx.font = 'bold 6px Arial'; ctx.fillText('SURRON', 32, -50);
+
+                // Seat
+                ctx.strokeStyle = '#111'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(25, -38); ctx.lineTo(15, -72); ctx.lineTo(45, -72); ctx.stroke();
+
+                // Gold Forks
+                let g = ctx.createLinearGradient(55, -75, 68, -19); g.addColorStop(0, '#ffd700'); g.addColorStop(1, '#b8860b');
+                ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(55, -75); ctx.lineTo(68, -19); ctx.stroke();
+                
+                // Bars
+                ctx.strokeStyle = '#ccc'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(55, -75); ctx.lineTo(52, -85); ctx.lineTo(62, -88); ctx.stroke();
             } else {
-                // Dirt Bike Body
-                ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(25, -50); ctx.lineTo(65, -18);
-                ctx.moveTo(25, -50); ctx.lineTo(50, -50); // Seat/Tank
-                ctx.lineTo(55, -65); // Bars
-                ctx.stroke();
-                ctx.fillStyle = '#333'; ctx.fillRect(25, -45, 20, 15); // Engine
+                // DIRT BIKE (Realistic)
+                // Wheels
+                ctx.lineWidth = 3; ctx.strokeStyle = '#333'; ctx.fillStyle = '#111';
+                // Rear
+                ctx.beginPath(); ctx.arc(0, -20, 20, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                // Front
+                ctx.beginPath(); ctx.arc(75, -22, 22, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+
+                // Swingarm
+                ctx.fillStyle = '#ccc'; ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(30, -40); ctx.lineTo(35, -35); ctx.lineTo(0, -20); ctx.fill();
+
+                // Engine
+                ctx.fillStyle = '#555'; ctx.fillRect(30, -50, 20, 20); 
+                // Exhaust
+                ctx.strokeStyle = '#444'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(45, -45); ctx.lineTo(10, -60); ctx.stroke();
+
+                // Body/Tank
+                ctx.fillStyle = '#ff4444'; ctx.beginPath(); ctx.moveTo(45, -75); ctx.lineTo(65, -75); ctx.lineTo(55, -55); ctx.fill(); 
+                
+                // Fenders
+                ctx.strokeStyle = '#ff4444'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(65, -65); ctx.quadraticCurveTo(85, -70, 90, -55); ctx.stroke(); // Front
+                ctx.beginPath(); ctx.moveTo(30, -75); ctx.lineTo(5, -70); ctx.stroke(); // Rear
+
+                // Seat
+                ctx.fillStyle = '#222'; ctx.fillRect(20, -78, 35, 6);
+
+                // Forks
+                ctx.strokeStyle = '#aaa'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(65, -75); ctx.lineTo(75, -22); ctx.stroke();
+                // Bars
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(65, -75); ctx.lineTo(60, -85); ctx.lineTo(75, -88); ctx.stroke();
             }
 
-            // Rider
-            ctx.strokeStyle = 'white'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(25, -50); ctx.lineTo(35, -85); // Body
-            ctx.moveTo(35, -85); ctx.lineTo(45, -65); // Arms
-            ctx.stroke();
-            ctx.beginPath(); ctx.arc(35, -95, 8, 0, Math.PI*2); ctx.fillStyle='white'; ctx.fill(); // Head
+            // --- RIDER (Jointed with Trick Support) ---
+            ctx.fillStyle = '#ddd'; ctx.strokeStyle = '#ddd'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+            
+            let hipX = bike.type === 'surron' ? 15 : 20; let hipY = -72;
+            let shoulderX = bike.type === 'surron' ? 35 : 45; let shoulderY = -90;
+            let handX = bike.type === 'surron' ? 55 : 65; let handY = -82;
+            let footX = bike.type === 'surron' ? 30 : 35; let footY = -40;
+
+            if (bike.trick === 'superman') {
+                ctx.beginPath(); ctx.moveTo(handX, handY); ctx.lineTo(shoulderX - 40, shoulderY - 10); // Arms
+                ctx.lineTo(hipX - 60, hipY - 10); // Body
+                ctx.lineTo(hipX - 90, hipY - 15); // Legs
+                ctx.stroke();
+                ctx.fillStyle = bike.type === 'surron' ? '#00f2ff' : '#ff4444'; ctx.beginPath(); ctx.arc(shoulderX - 35, shoulderY - 25, 9, 0, Math.PI*2); ctx.fill(); // Head
+            } 
+            else {
+                // Legs
+                if (bike.trick === 'nofoot') {
+                    ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(hipX - 10, hipY - 20); ctx.lineTo(hipX - 20, hipY - 40); ctx.stroke();
+                } else {
+                    ctx.beginPath(); ctx.moveTo(footX, footY); ctx.lineTo(bike.type === 'surron' ? 25 : 30, -60); ctx.lineTo(hipX, hipY); ctx.stroke();
+                }
+                // Torso
+                ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(shoulderX, shoulderY); ctx.stroke();
+                // Arms
+                if (bike.trick === 'nohand') {
+                    ctx.beginPath(); ctx.moveTo(shoulderX, shoulderY); ctx.lineTo(shoulderX + 10, shoulderY - 20); ctx.lineTo(shoulderX + 5, shoulderY - 35); ctx.stroke();
+                } else {
+                    ctx.beginPath(); ctx.moveTo(shoulderX, shoulderY); ctx.lineTo(handX, handY); ctx.stroke();
+                }
+                // Helmet
+                ctx.fillStyle = bike.type === 'surron' ? '#00f2ff' : '#ff4444'; ctx.beginPath(); ctx.arc(bike.type === 'surron' ? 38 : 48, -100, 9, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#111'; ctx.fillRect(bike.type === 'surron' ? 42 : 52, -103, 6, 5); // Visor
+            }
 
             ctx.restore();
         }
@@ -958,8 +1060,15 @@
         }
 
         const mathInput = document.getElementById('math-input');
-        mathInput.oninput = (e) => { if(parseInt(e.target.value) === mathAns) handleCorrectMath(); };
-        mathInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { if (parseInt(mathInput.value) === mathAns) handleCorrectMath(); else handleWrongMath(); } });
+        mathInput.oninput = (e) => {
+            if(parseInt(e.target.value) === mathAns) handleCorrectMath();
+        };
+        mathInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (parseInt(mathInput.value) === mathAns) handleCorrectMath();
+                else handleWrongMath();
+            }
+        });
 
         // --- COOKIE CRUNCH ---
         let cookies = 0; let clickPower = 1; let cookiesPerSecond = 0;
@@ -1108,7 +1217,7 @@
             if (isPlaying) {
                 if (activeGame === 'wave') {
                     player.x += waveLvl.speed; 
-                    player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
+                    player.y += (keys[' '] || keys['arrowup'] || keys['touchstart']) ? -6 : 6;
                     let c = currentTrailColor === 'rainbow' ? `hsl(${(player.x / 5) % 360}, 100%, 60%)` : currentTrailColor;
                     player.trail.push({x: player.x, y: player.y, color: c}); if(player.trail.length > 60) player.trail.shift();
                     if(player.y < 0 || player.y > canvas.height) triggerGameOver(score);
@@ -1157,7 +1266,9 @@
             requestAnimationFrame(loop);
         }
 
-        window.onkeydown = (e) => keys[e.key] = true; window.onkeyup = (e) => keys[e.key] = false;
+        window.onkeydown = (e) => keys[e.key.toLowerCase()] = true; 
+        window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
+        
         window.ontouchstart = (e) => { if(!e.target.closest('.btn-ui, #math-input, #big-cookie, .trail-option, .color-dot, .shop-item, #music-panel')) keys['touchstart'] = true; };
         window.ontouchend = () => keys['touchstart'] = false;
         document.getElementById('music-menu-btn').onclick = () => { const p = document.getElementById('music-panel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; };
