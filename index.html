@@ -711,15 +711,19 @@
 
         function updateBike() {
             let speed = bike.type === 'surron' ? 12 : 14; 
-            let wheelieSpeed = bike.type === 'surron' ? 0.15 : 0.08; 
+            let wheelieSpeed = bike.type === 'surron' ? 0.1 : 0.06; // Adjusted for control
+            
             bikeDistance += speed/10;
             
-            let targetAngle = keys['Shift'] ? -0.7 : 0;
+            // Target is now PAST the crash point, so holding it causes a loop out
+            let targetAngle = keys['Shift'] ? -2.5 : 0;
+            
             bike.angle += (targetAngle - bike.angle) * wheelieSpeed;
             
-            // LOOP OUT LOGIC - Approx 115 degrees = -2.0 radians from flat
+            // LOOP OUT LOGIC - Approx 115 degrees = -2.0 radians
             if (bike.angle < -2.0) triggerGameOver(Math.floor(bikeScore), "LOOPED OUT!");
 
+            // Scoring Range
             if (bike.angle < -0.4 && bike.angle > -1.9) {
                 bikeScore += 2;
                 document.getElementById('wheelie-bar').style.width = `${Math.min(100, (Math.abs(bike.angle)-0.4)*80)}%`;
@@ -735,7 +739,7 @@
             cityBuildings.forEach(b => b.x -= speed);
             if (cityBuildings[0].x < -400) { cityBuildings.shift(); createBuilding(cityBuildings[cityBuildings.length-1].x + 350); }
 
-            cityTrees.forEach(t => t.x -= speed * 1.2); // Trees move faster (foreground)
+            cityTrees.forEach(t => t.x -= speed * 1.2); 
             if (cityTrees[0].x < -100) { cityTrees.shift(); cityTrees.push({ x: cityTrees[cityTrees.length-1].x + 150 + Math.random()*200, h: 60 + Math.random()*40 }); }
 
             document.getElementById('bike-dist').innerText = `${Math.floor(bikeDistance)} m`;
