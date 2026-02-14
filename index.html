@@ -220,20 +220,36 @@
             margin-bottom: 10px;
         }
 
-        /* --- LEVEL SELECTION FIX --- */
+        /* --- PAGINATED LEVEL SELECTION --- */
         .level-grid { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
             gap: 12px; 
             margin: 20px 0; 
-            overflow-y: auto; 
-            padding-right: 5px;
             flex-grow: 1;
         }
-        /* Custom Scrollbar for the level grid */
-        .level-grid::-webkit-scrollbar { width: 6px; }
-        .level-grid::-webkit-scrollbar-thumb { background: var(--neon-blue); border-radius: 10px; }
-        .level-grid::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding: 0 10px;
+        }
+
+        .page-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
 
         .level-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 15px; border-radius: 12px; cursor: pointer; text-align: left; transition: 0.2s; }
         .level-btn:hover { border-color: var(--neon-blue); background: rgba(0, 242, 255, 0.1); }
@@ -255,7 +271,7 @@
 </head>
 <body>
 
-    <!-- Back Button - Top Priority -->
+    <!-- Back Button -->
     <button id="back-to-menu">BACK TO HUB</button>
     <button id="audio-toggle">SOUND: OFF</button>
 
@@ -282,7 +298,14 @@
     <div id="wave-level-select" class="screen hidden">
         <h2 style="color: var(--neon-blue); margin-top: 0; flex-shrink: 0;">SELECT LEVEL</h2>
         <div class="level-grid" id="level-grid-container"></div>
-        <button class="action-btn" id="close-level-select" style="background: #333; margin-top: 20px;">Back</button>
+        
+        <div class="pagination-controls">
+            <button class="page-btn" id="prev-page">PREV</button>
+            <span id="page-indicator">Page 1 / 3</span>
+            <button class="page-btn" id="next-page">NEXT</button>
+        </div>
+
+        <button class="action-btn" id="close-level-select" style="background: #333; margin-top: 20px;">Back to Hub</button>
     </div>
 
     <div id="wave-ui" class="hidden">
@@ -376,6 +399,7 @@
             mainMenu.classList.add('hidden');
             document.getElementById('wave-level-select').classList.remove('hidden');
             backBtn.style.display = 'block';
+            currentLevelPage = 0; // Reset to first page
             renderWaveLevels();
         };
 
@@ -412,98 +436,46 @@
             if (mode === 'clicker') startClicker();
         }
 
-        // --- COOKIE CLICKER GAME ---
-        let cookies = 0;
-        let cps = 0;
-        let clickPower = 1;
+        // --- COOKIE CLICKER GAME (Logic remains as provided) ---
+        let cookies = 0; let cps = 0; let clickPower = 1;
         const shopItems = [
             { id: 'clicker', name: 'Mega-Click', cost: 10, baseCps: 0, power: 1, owned: 0, desc: '+1 Click Power' },
             { id: 'baker', name: 'Auto-Baker', cost: 15, baseCps: 1, power: 0, owned: 0, desc: 'Bakes 1 cookie/sec' },
             { id: 'oven', name: 'Neon Oven', cost: 100, baseCps: 8, power: 0, owned: 0, desc: 'Bakes 8 cookies/sec' },
             { id: 'factory', name: 'Cookie Factory', cost: 1000, baseCps: 50, power: 0, owned: 0, desc: 'Mass production!' }
         ];
-
-        function startClicker() {
-            loadLocalData();
-            isPlaying = true;
-            renderShop();
-            updateClickerUI();
-        }
-
-        document.getElementById('big-cookie').onclick = () => {
-            cookies += clickPower;
-            AudioEngine.playNote(600, 'sine', 0.1);
-            updateClickerUI();
-        };
-
+        function startClicker() { loadLocalData(); isPlaying = true; renderShop(); updateClickerUI(); }
+        document.getElementById('big-cookie').onclick = () => { cookies += clickPower; AudioEngine.playNote(600, 'sine', 0.1); updateClickerUI(); };
         function renderShop() {
             const container = document.getElementById('shop-container');
             container.innerHTML = '';
             shopItems.forEach(item => {
                 const div = document.createElement('div');
                 div.className = `shop-item ${cookies < item.cost ? 'disabled' : ''}`;
-                div.innerHTML = `
-                    <div class="owned-tag">${item.owned}</div>
-                    <h4>${item.name}</h4>
-                    <p>${item.desc}</p>
-                    <div class="shop-cost">Cost: ${Math.floor(item.cost)}</div>
-                `;
-                div.onclick = () => {
-                    if (cookies >= item.cost) {
-                        cookies -= item.cost;
-                        item.owned++;
-                        item.cost *= 1.25;
-                        calculateStats();
-                        renderShop();
-                        updateClickerUI();
-                        saveLocalData();
-                    }
-                };
+                div.innerHTML = `<div class="owned-tag">${item.owned}</div><h4>${item.name}</h4><p>${item.desc}</p><div class="shop-cost">Cost: ${Math.floor(item.cost)}</div>`;
+                div.onclick = () => { if (cookies >= item.cost) { cookies -= item.cost; item.owned++; item.cost *= 1.25; calculateStats(); renderShop(); updateClickerUI(); saveLocalData(); }};
                 container.appendChild(div);
             });
         }
-
-        function calculateStats() {
-            cps = shopItems.reduce((acc, i) => acc + (i.owned * (i.baseCps || 0)), 0);
-            clickPower = 1 + shopItems.reduce((acc, i) => acc + (i.owned * (i.power || 0)), 0);
-        }
-
+        function calculateStats() { cps = shopItems.reduce((acc, i) => acc + (i.owned * (i.baseCps || 0)), 0); clickPower = 1 + shopItems.reduce((acc, i) => acc + (i.owned * (i.power || 0)), 0); }
         function updateClickerUI() {
-            const countEl = document.getElementById('cookie-count');
-            const cpsEl = document.getElementById('cps-val');
+            const countEl = document.getElementById('cookie-count'); const cpsEl = document.getElementById('cps-val');
             if (countEl) countEl.innerText = Math.floor(cookies).toLocaleString();
             if (cpsEl) cpsEl.innerText = cps.toFixed(1);
-            
             const items = document.querySelectorAll('.shop-item');
-            shopItems.forEach((item, idx) => {
-                if (items[idx]) {
-                    if (cookies < item.cost) items[idx].classList.add('disabled');
-                    else items[idx].classList.remove('disabled');
-                }
-            });
+            shopItems.forEach((item, idx) => { if (items[idx]) { if (cookies < item.cost) items[idx].classList.add('disabled'); else items[idx].classList.remove('disabled'); }});
         }
-
         function saveLocalData() {
             const data = { cookies, shopItems, lastSaved: Date.now() };
             localStorage.setItem('matthews_hub_save', JSON.stringify(data));
             const status = document.getElementById('save-status');
-            if (status) {
-                status.style.opacity = 1; 
-                setTimeout(() => status.style.opacity = 0, 1000);
-            }
+            if (status) { status.style.opacity = 1; setTimeout(() => status.style.opacity = 0, 1000); }
         }
-
         function loadLocalData() {
             const saved = localStorage.getItem('matthews_hub_save');
             if (saved) {
-                const data = JSON.parse(saved);
-                cookies = data.cookies;
-                data.shopItems.forEach((savedItem, i) => {
-                    if (shopItems[i]) {
-                        shopItems[i].owned = savedItem.owned;
-                        shopItems[i].cost = savedItem.cost;
-                    }
-                });
+                const data = JSON.parse(saved); cookies = data.cookies;
+                data.shopItems.forEach((savedItem, i) => { if (shopItems[i]) { shopItems[i].owned = savedItem.owned; shopItems[i].cost = savedItem.cost; }});
                 calculateStats();
             }
         }
@@ -512,18 +484,35 @@
         let player = { x: 0, y: 0 }, walls = [], waveLvl = null, score = 0;
         const WAVE_LEVELS = [
             { id: 1, speed: 5, gap: 300, color: '#00f2ff' },
-            { id: 2, speed: 6, gap: 280, color: '#ff007f' },
-            { id: 3, speed: 7, gap: 260, color: '#00ff88' },
-            { id: 4, speed: 8, gap: 240, color: '#ffaa00' },
-            { id: 5, speed: 9, gap: 220, color: '#bc13fe' },
-            { id: 6, speed: 10, gap: 200, color: '#ff0000' }
+            { id: 2, speed: 5.5, gap: 290, color: '#00e2ff' },
+            { id: 3, speed: 6, gap: 280, color: '#ff007f' },
+            { id: 4, speed: 6.5, gap: 270, color: '#ff00a0' },
+            { id: 5, speed: 7, gap: 260, color: '#00ff88' },
+            { id: 6, speed: 7.5, gap: 250, color: '#00ff66' },
+            { id: 7, speed: 8, gap: 240, color: '#ffaa00' },
+            { id: 8, speed: 8.5, gap: 230, color: '#ffcc00' },
+            { id: 9, speed: 9, gap: 220, color: '#bc13fe' },
+            { id: 10, speed: 10, gap: 200, color: '#ff0000' }
         ];
+
+        let currentLevelPage = 0;
+        const itemsPerPage = 4;
 
         function renderWaveLevels() {
             const container = document.getElementById('level-grid-container');
+            const pageIndicator = document.getElementById('page-indicator');
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+            
             if (!container) return;
             container.innerHTML = '';
-            WAVE_LEVELS.forEach(lvl => {
+            
+            const startIdx = currentLevelPage * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const totalPages = Math.ceil(WAVE_LEVELS.length / itemsPerPage);
+            const pageItems = WAVE_LEVELS.slice(startIdx, endIdx);
+
+            pageItems.forEach(lvl => {
                 const btn = document.createElement('button');
                 btn.className = 'level-btn';
                 btn.innerHTML = `<strong>LEVEL ${lvl.id}</strong><br><small>Speed: ${lvl.speed}</small>`;
@@ -534,7 +523,27 @@
                 };
                 container.appendChild(btn);
             });
+
+            // Update Pagination UI
+            pageIndicator.innerText = `Page ${currentLevelPage + 1} / ${totalPages}`;
+            prevBtn.disabled = currentLevelPage === 0;
+            nextBtn.disabled = currentLevelPage >= totalPages - 1;
         }
+
+        document.getElementById('prev-page').onclick = () => {
+            if (currentLevelPage > 0) {
+                currentLevelPage--;
+                renderWaveLevels();
+            }
+        };
+
+        document.getElementById('next-page').onclick = () => {
+            const totalPages = Math.ceil(WAVE_LEVELS.length / itemsPerPage);
+            if (currentLevelPage < totalPages - 1) {
+                currentLevelPage++;
+                renderWaveLevels();
+            }
+        };
 
         function startWave(lvl) {
             waveLvl = lvl; 
@@ -554,30 +563,11 @@
 
         document.getElementById('wave-retry').onclick = () => startWave(waveLvl);
 
-        // --- MATH DASH GAME ---
+        // --- MATH DASH GAME (Logic remains as provided) ---
         let mathEnergy = 100, mathAns = 0;
-        function startMath() {
-            mathEnergy = 100; isPlaying = true;
-            document.getElementById('math-over').classList.add('hidden');
-            genMath();
-            const input = document.getElementById('math-input');
-            input.value = '';
-            input.focus();
-        }
-        function genMath() {
-            const n1 = Math.floor(Math.random() * 12) + 1;
-            const n2 = Math.floor(Math.random() * 12) + 1;
-            mathAns = n1 + n2;
-            document.getElementById('math-problem').innerText = `${n1} + ${n2}`;
-        }
-        document.getElementById('math-input').oninput = (e) => {
-            if (parseInt(e.target.value) === mathAns) {
-                mathEnergy = Math.min(100, mathEnergy + 15);
-                e.target.value = ''; 
-                genMath();
-                AudioEngine.playNote(800, 'sine', 0.1);
-            }
-        };
+        function startMath() { mathEnergy = 100; isPlaying = true; document.getElementById('math-over').classList.add('hidden'); genMath(); const input = document.getElementById('math-input'); input.value = ''; input.focus(); }
+        function genMath() { const n1 = Math.floor(Math.random() * 12) + 1; const n2 = Math.floor(Math.random() * 12) + 1; mathAns = n1 + n2; document.getElementById('math-problem').innerText = `${n1} + ${n2}`; }
+        document.getElementById('math-input').oninput = (e) => { if (parseInt(e.target.value) === mathAns) { mathEnergy = Math.min(100, mathEnergy + 15); e.target.value = ''; genMath(); AudioEngine.playNote(800, 'sine', 0.1); }};
         document.getElementById('math-retry').onclick = () => startMath();
 
         // --- CORE GAME LOOP ---
@@ -586,91 +576,35 @@
                 if (activeGame === 'wave') {
                     player.x += waveLvl.speed;
                     player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
-                    
-                    if (player.y < 0 || player.y > canvas.height) { 
-                        isPlaying = false; 
-                        document.getElementById('wave-over').classList.remove('hidden'); 
-                    }
-                    
+                    if (player.y < 0 || player.y > canvas.height) { isPlaying = false; document.getElementById('wave-over').classList.remove('hidden'); }
                     walls.forEach(w => {
                         if (player.x + 10 > w.x && player.x - 10 < w.x + w.w) {
-                            if (player.y - 10 < w.top || player.y + 10 > w.bottom) {
-                                isPlaying = false; 
-                                document.getElementById('wave-over').classList.remove('hidden'); 
-                            }
+                            if (player.y - 10 < w.top || player.y + 10 > w.bottom) { isPlaying = false; document.getElementById('wave-over').classList.remove('hidden'); }
                         }
                     });
-
-                    if (player.x > walls[0].x + walls[0].w + 200) {
-                        walls.shift();
-                        spawnWall(walls[walls.length-1].x + 400);
-                        score++;
-                        document.getElementById('wave-score-container').innerText = score;
-                    }
+                    if (player.x > walls[0].x + walls[0].w + 200) { walls.shift(); spawnWall(walls[walls.length-1].x + 400); score++; document.getElementById('wave-score-container').innerText = score; }
                 }
-                
-                if (activeGame === 'math') {
-                    mathEnergy -= 0.2;
-                    if (mathEnergy <= 0) { 
-                        isPlaying = false; 
-                        document.getElementById('math-over').classList.remove('hidden'); 
-                    }
-                }
-
-                if (activeGame === 'clicker') {
-                    cookies += (cps / 60);
-                    updateClickerUI();
-                }
+                if (activeGame === 'math') { mathEnergy -= 0.2; if (mathEnergy <= 0) { isPlaying = false; document.getElementById('math-over').classList.remove('hidden'); }}
+                if (activeGame === 'clicker') { cookies += (cps / 60); updateClickerUI(); }
             }
-
-            // Draw Background
-            ctx.fillStyle = '#050510';
-            ctx.fillRect(0,0,canvas.width, canvas.height);
-
-            // Draw Wave Game
+            ctx.fillStyle = '#050510'; ctx.fillRect(0,0,canvas.width, canvas.height);
             if (activeGame === 'wave') {
-                ctx.save();
-                ctx.translate(-player.x + 200, 0);
-                
-                ctx.fillStyle = waveLvl.color;
-                walls.forEach(w => {
-                    ctx.fillRect(w.x, 0, w.w, w.top);
-                    ctx.fillRect(w.x, w.bottom, w.w, canvas.height);
-                    // Glow
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = waveLvl.color;
-                });
-                
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = 'white';
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(player.x, player.y, 10, 0, Math.PI*2);
-                ctx.fill();
-                ctx.restore();
+                ctx.save(); ctx.translate(-player.x + 200, 0); ctx.fillStyle = waveLvl.color;
+                walls.forEach(w => { ctx.fillRect(w.x, 0, w.w, w.top); ctx.fillRect(w.x, w.bottom, w.w, canvas.height); ctx.shadowBlur = 15; ctx.shadowColor = waveLvl.color; });
+                ctx.shadowBlur = 20; ctx.shadowColor = 'white'; ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(player.x, player.y, 10, 0, Math.PI*2); ctx.fill(); ctx.restore();
             }
-
-            // Draw Math Energy Bar
             if (activeGame === 'math') {
-                ctx.fillStyle = 'rgba(255,255,255,0.1)';
-                ctx.fillRect(canvas.width/2 - 150, 40, 300, 20);
+                ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(canvas.width/2 - 150, 40, 300, 20);
                 ctx.fillStyle = mathEnergy > 30 ? varName('--neon-green') : varName('--neon-pink');
                 ctx.fillRect(canvas.width/2 - 150, 40, (mathEnergy/100) * 300, 20);
             }
-
             requestAnimationFrame(loop);
         }
-
-        function varName(name) {
-            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-        }
-
-        // Input listeners
+        function varName(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
         window.onkeydown = (e) => keys[e.key] = true;
         window.onkeyup = (e) => keys[e.key] = false;
         window.ontouchstart = () => keys['touchstart'] = true;
         window.ontouchend = () => keys['touchstart'] = false;
-
         loop();
     </script>
 </body>
