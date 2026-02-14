@@ -711,14 +711,27 @@
 
         function updateBike() {
             let speed = bike.type === 'surron' ? 12 : 14; 
-            let wheelieSpeed = bike.type === 'surron' ? 0.1 : 0.06; // Adjusted for control
+            
+            // Adjusted physics for smoother control
+            // Lower numbers = slower rotation
+            let pullUpSpeed = bike.type === 'surron' ? 0.04 : 0.025; 
+            let dropDownSpeed = bike.type === 'surron' ? 0.06 : 0.04;
             
             bikeDistance += speed/10;
             
-            // Target is now PAST the crash point, so holding it causes a loop out
-            let targetAngle = keys['Shift'] ? -2.5 : 0;
+            let targetAngle = 0;
+            let rotationSpeed = 0;
+
+            if (keys['Shift']) {
+                targetAngle = -2.5; // Target is past loop-out to force balancing
+                rotationSpeed = pullUpSpeed;
+            } else {
+                targetAngle = 0; // Flat on ground
+                rotationSpeed = dropDownSpeed;
+            }
             
-            bike.angle += (targetAngle - bike.angle) * wheelieSpeed;
+            // Apply rotation with specific speed based on direction
+            bike.angle += (targetAngle - bike.angle) * rotationSpeed;
             
             // LOOP OUT LOGIC - Approx 115 degrees = -2.0 radians
             if (bike.angle < -2.0) triggerGameOver(Math.floor(bikeScore), "LOOPED OUT!");
