@@ -565,12 +565,6 @@
                 document.getElementById('music-menu-btn').innerText = `🎵 Track: ${type.toUpperCase()}`; 
                 this.loopProcedural(type);
             },
-            speak(text, pitch = 1, rate = 1) {
-                if (this.gainNode.gain.value === 0) return;
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.pitch = pitch; utterance.rate = rate; utterance.volume = 0.5;
-                window.speechSynthesis.speak(utterance);
-            },
             async loopProcedural(type) {
                 let step = 0;
                 while (this.isPlaying && this.currentTrack === type) {
@@ -578,12 +572,10 @@
                     else if (type === 'rap') { 
                         if (step % 2 === 0) this.triggerNote(60, 0.3, 0.4, 'sine'); 
                         if (step % 4 === 2) this.triggerNote(1200, 0.05, 0.1, 'square'); 
-                        if (step % 8 === 0) this.speak(['Yeah', 'Let\'s Go', 'Uh', 'Check it'][Math.floor(Math.random()*4)], 0.8, 1.5);
                         await new Promise(r => setTimeout(r, 200)); 
                     }
                     else if (type === 'mexican') { 
                         this.triggerNote([392, 440, 493, 523, 587][Math.floor(Math.random() * 5)], 0.15, 0.3, 'sawtooth'); 
-                        if (step % 16 === 0) this.speak(['Uno', 'Dos', 'Fiesta', 'Arriba'][Math.floor(Math.random()*4)], 1.2, 1.2);
                         await new Promise(r => setTimeout(r, 250)); 
                     }
                     else if (type === 'synth') { this.triggerNote([220, 261, 329, 392, 440, 523][step % 6], 0.1, 0.4, 'square'); await new Promise(r => setTimeout(r, 150)); }
