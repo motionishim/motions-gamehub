@@ -26,7 +26,7 @@
 
         /* --- NAVIGATION & HUB --- */
         #main-menu {
-            position: fixed; /* Changed to fixed to stay on top */
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -36,7 +36,7 @@
             justify-content: center;
             align-items: center;
             background: radial-gradient(circle at center, #101030 0%, #050510 100%);
-            z-index: 1000; /* High z-index */
+            z-index: 1000;
         }
 
         .hub-title {
@@ -67,7 +67,7 @@
             transition: all 0.3s;
             text-align: center;
             backdrop-filter: blur(10px);
-            pointer-events: auto; /* Ensure clicks work */
+            pointer-events: auto;
         }
 
         .game-card:hover {
@@ -127,10 +127,13 @@
             border: 2px solid white;
             backdrop-filter: blur(25px);
             z-index: 1500;
-            width: 420px;
+            width: 450px;
             text-align: center;
             max-width: 90vw;
             box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
         }
         button.action-btn {
             background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
@@ -142,6 +145,7 @@
             cursor: pointer;
             text-transform: uppercase;
             margin-top: 10px;
+            flex-shrink: 0;
         }
 
         /* --- COOKIE CLICKER UI --- */
@@ -216,7 +220,21 @@
             margin-bottom: 10px;
         }
 
-        .level-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; }
+        /* --- LEVEL SELECTION FIX --- */
+        .level-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+            margin: 20px 0; 
+            overflow-y: auto; 
+            padding-right: 5px;
+            flex-grow: 1;
+        }
+        /* Custom Scrollbar for the level grid */
+        .level-grid::-webkit-scrollbar { width: 6px; }
+        .level-grid::-webkit-scrollbar-thumb { background: var(--neon-blue); border-radius: 10px; }
+        .level-grid::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+
         .level-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 15px; border-radius: 12px; cursor: pointer; text-align: left; transition: 0.2s; }
         .level-btn:hover { border-color: var(--neon-blue); background: rgba(0, 242, 255, 0.1); }
 
@@ -262,7 +280,7 @@
 
     <!-- Wave UI -->
     <div id="wave-level-select" class="screen hidden">
-        <h2 style="color: var(--neon-blue); margin-top: 0;">SELECT LEVEL</h2>
+        <h2 style="color: var(--neon-blue); margin-top: 0; flex-shrink: 0;">SELECT LEVEL</h2>
         <div class="level-grid" id="level-grid-container"></div>
         <button class="action-btn" id="close-level-select" style="background: #333; margin-top: 20px;">Back</button>
     </div>
@@ -451,8 +469,11 @@
         }
 
         function updateClickerUI() {
-            document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
-            document.getElementById('cps-val').innerText = cps.toFixed(1);
+            const countEl = document.getElementById('cookie-count');
+            const cpsEl = document.getElementById('cps-val');
+            if (countEl) countEl.innerText = Math.floor(cookies).toLocaleString();
+            if (cpsEl) cpsEl.innerText = cps.toFixed(1);
+            
             const items = document.querySelectorAll('.shop-item');
             shopItems.forEach((item, idx) => {
                 if (items[idx]) {
@@ -466,7 +487,10 @@
             const data = { cookies, shopItems, lastSaved: Date.now() };
             localStorage.setItem('matthews_hub_save', JSON.stringify(data));
             const status = document.getElementById('save-status');
-            status.style.opacity = 1; setTimeout(() => status.style.opacity = 0, 1000);
+            if (status) {
+                status.style.opacity = 1; 
+                setTimeout(() => status.style.opacity = 0, 1000);
+            }
         }
 
         function loadLocalData() {
@@ -488,12 +512,16 @@
         let player = { x: 0, y: 0 }, walls = [], waveLvl = null, score = 0;
         const WAVE_LEVELS = [
             { id: 1, speed: 5, gap: 300, color: '#00f2ff' },
-            { id: 2, speed: 7, gap: 250, color: '#ff007f' },
-            { id: 3, speed: 10, gap: 200, color: '#00ff88' }
+            { id: 2, speed: 6, gap: 280, color: '#ff007f' },
+            { id: 3, speed: 7, gap: 260, color: '#00ff88' },
+            { id: 4, speed: 8, gap: 240, color: '#ffaa00' },
+            { id: 5, speed: 9, gap: 220, color: '#bc13fe' },
+            { id: 6, speed: 10, gap: 200, color: '#ff0000' }
         ];
 
         function renderWaveLevels() {
             const container = document.getElementById('level-grid-container');
+            if (!container) return;
             container.innerHTML = '';
             WAVE_LEVELS.forEach(lvl => {
                 const btn = document.createElement('button');
