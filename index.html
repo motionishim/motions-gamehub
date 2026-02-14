@@ -24,7 +24,6 @@
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             color: white;
             touch-action: none;
-            /* Prevent text selection globally to improve game feel */
             user-select: none;
             -webkit-user-select: none;
         }
@@ -144,9 +143,6 @@
         .game-card.clicker::before { background: var(--neon-orange); }
         .game-card.clicker:hover { border-color: var(--neon-orange); box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(255, 170, 0, 0.2); }
 
-        .game-card h2 { font-size: 1.3rem; margin: 15px 0 10px 0; font-weight: 800; letter-spacing: 1px; }
-        .game-card p { font-size: 0.85rem; color: #aaa; line-height: 1.4; }
-
         .btn-ui {
             background: var(--glass);
             border: 1px solid var(--glass-border);
@@ -160,11 +156,25 @@
             transition: 0.3s;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin: 5px;
         }
-        .btn-ui:hover { background: white; color: black; }
+        .btn-ui:hover:not(:disabled) { background: white; color: black; }
+        .btn-ui.active { background: var(--neon-blue); color: black; border-color: white; }
 
         #back-to-menu { position: fixed; top: 20px; left: 20px; z-index: 2000; display: none; }
         #audio-toggle { position: fixed; top: 20px; right: 20px; z-index: 2000; }
+        #save-indicator { 
+            position: fixed; 
+            bottom: 20px; 
+            left: 20px; 
+            z-index: 2000; 
+            font-size: 0.7rem; 
+            color: var(--neon-green); 
+            opacity: 0; 
+            transition: opacity 0.5s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
 
         .owner-tag {
             position: fixed;
@@ -177,24 +187,6 @@
             text-transform: uppercase;
         }
         .owner-tag span { color: var(--neon-blue); font-weight: 900; }
-
-        /* --- SHARED SCREEN UI --- */
-        .screen {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(10, 10, 25, 0.95);
-            padding: 40px;
-            border-radius: 32px;
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(30px);
-            z-index: 1500;
-            width: 500px;
-            max-width: 90vw;
-            box-shadow: 0 40px 100px rgba(0,0,0,0.9);
-            text-align: center;
-        }
 
         /* --- CLICKER UI --- */
         #clicker-ui {
@@ -284,27 +276,36 @@
         .item-cost { font-size: 0.8rem; color: var(--neon-green); font-weight: 600; }
         .item-owned { font-size: 1.2rem; font-weight: 900; color: var(--neon-blue); opacity: 0.8; }
 
-        /* WAVE LEVEL SELECT */
-        .level-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
-            min-height: 200px;
-        }
-        .pagination { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .page-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.2); cursor: pointer; transition: 0.3s; }
-        .page-dot.active { background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); transform: scale(1.2); }
-
         @media (max-width: 850px) {
             #clicker-ui { flex-direction: column; overflow-y: auto; }
             .clicker-shop { width: 100%; border-left: none; border-top: 1px solid var(--glass-border); }
             .clicker-main { min-height: 60vh; padding: 20px; }
         }
 
+        /* Standard Game UIs */
+        .screen {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 25, 0.95);
+            padding: 40px;
+            border-radius: 32px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(30px);
+            z-index: 1500;
+            width: 500px;
+            max-width: 90vw;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+            text-align: center;
+        }
         canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
         #wave-ui, #math-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
         #math-input { pointer-events: auto; }
+        
+        /* Math Screen Specifics */
+        .option-group { margin: 15px 0; }
+        .option-label { font-size: 0.7rem; text-transform: uppercase; color: var(--neon-pink); letter-spacing: 2px; display: block; margin-bottom: 8px; }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -314,6 +315,7 @@
 
     <button id="back-to-menu" class="btn-ui">← Exit Game</button>
     <button id="audio-toggle" class="btn-ui">Sound: Off</button>
+    <div id="save-indicator">Game Saved</div>
     
     <div class="owner-tag">Arcade by <span>Matthew</span></div>
 
@@ -332,12 +334,12 @@
             <div class="game-card math" id="card-math">
                 <div style="font-size: 2.5rem;">⚡</div>
                 <h2>MATH DASH</h2>
-                <p>High-speed mental arithmetic. Keep the energy alive.</p>
+                <p>High-speed mental arithmetic. Select your challenge level.</p>
             </div>
             <div class="game-card clicker" id="card-clicker">
                 <div style="font-size: 2.5rem;">🍪</div>
                 <h2>COOKIE CRUNCH</h2>
-                <p>Build your empire. One click at a time.</p>
+                <p>Build your empire. Progress is saved automatically.</p>
             </div>
         </div>
     </div>
@@ -345,29 +347,45 @@
     <!-- Wave Level Select -->
     <div id="wave-level-select" class="screen hidden">
         <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Select Level</h2>
-        <div class="level-grid" id="level-grid-container"></div>
-        <div class="pagination" id="pagination-dots"></div>
-        <button class="action-btn" id="close-level-select" style="background: rgba(255,255,255,0.05); width: 100%; border: 1px solid var(--glass-border);">Back to Hub</button>
+        <div class="level-grid" id="level-grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;"></div>
+        <button class="btn-ui" id="close-level-select" style="width: 100%;">Back to Hub</button>
     </div>
 
+    <!-- Math Select Screen -->
+    <div id="math-select-screen" class="screen hidden">
+        <h2 style="color: var(--neon-pink); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Math Configuration</h2>
+        
+        <div class="option-group">
+            <span class="option-label">Operation</span>
+            <div id="math-op-btns">
+                <button class="btn-ui active" data-op="+">Addition</button>
+                <button class="btn-ui" data-op="-">Subtraction</button>
+                <button class="btn-ui" data-op="*">Multiplication</button>
+            </div>
+        </div>
+
+        <div class="option-group">
+            <span class="option-label">Difficulty</span>
+            <div id="math-diff-btns">
+                <button class="btn-ui active" data-diff="easy">Easy</button>
+                <button class="btn-ui" data-diff="medium">Medium</button>
+                <button class="btn-ui" data-diff="hard">Hard</button>
+                <button class="btn-ui" data-diff="insane">Insane</button>
+            </div>
+        </div>
+
+        <button class="btn-ui" id="start-math-btn" style="width: 100%; background: var(--neon-pink); color: black; margin-top: 20px; font-weight: 900;">START DASH</button>
+    </div>
+
+    <!-- Game UIs -->
     <div id="wave-ui" class="hidden">
         <div id="wave-score-container" style="position: absolute; top: 30px; right: 40px; font-size: 3rem; font-weight: 900; opacity: 0.3; color: white;">0</div>
-        <div id="wave-over" class="screen hidden" style="pointer-events: auto;">
-            <h1 style="color: var(--neon-pink); font-size: 3rem;">CRASHED</h1>
-            <p id="final-wave-score" style="margin-bottom: 30px;">Score: 0</p>
-            <button class="action-btn" id="wave-retry">Try Again</button>
-        </div>
     </div>
 
-    <!-- Math UI -->
     <div id="math-ui" class="hidden">
-        <div style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-            <div id="math-problem" style="font-size: 5rem; font-weight: 900; text-shadow: 0 0 30px rgba(255,255,255,0.5);">? + ?</div>
-            <input type="number" id="math-input" style="background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); color: white; font-size: 3rem; text-align: center; width: 200px; border-radius: 20px; margin-top: 30px; outline: none;">
-        </div>
-        <div id="math-over" class="screen hidden" style="pointer-events: auto;">
-            <h1 style="color: var(--neon-pink)">ENERGY DEPLETED</h1>
-            <button class="action-btn" id="math-retry">Restart</button>
+        <div style="position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%;">
+            <div id="math-problem" style="font-size: clamp(3rem, 15vw, 6rem); font-weight: 900; text-shadow: 0 0 30px rgba(255,255,255,0.5);">? + ?</div>
+            <input type="number" id="math-input" placeholder="?" style="background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); color: white; font-size: 3rem; text-align: center; width: 220px; border-radius: 20px; margin-top: 30px; outline: none;">
         </div>
     </div>
 
@@ -406,49 +424,31 @@
         const bgCanvas = document.getElementById('bg-canvas');
         const bgCtx = bgCanvas.getContext('2d');
         let particles = [];
-
         function initBG() {
-            bgCanvas.width = window.innerWidth;
-            bgCanvas.height = window.innerHeight;
+            bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
             particles = Array.from({length: 50}, () => ({
-                x: Math.random() * bgCanvas.width,
-                y: Math.random() * bgCanvas.height,
-                size: Math.random() * 2,
-                speed: Math.random() * 0.5 + 0.1
+                x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height,
+                size: Math.random() * 2, speed: Math.random() * 0.5 + 0.1
             }));
         }
-
         function drawBG() {
-            bgCtx.clearRect(0,0,bgCanvas.width, bgCanvas.height);
-            bgCtx.fillStyle = '#00f2ff';
+            bgCtx.clearRect(0,0,bgCanvas.width, bgCanvas.height); bgCtx.fillStyle = '#00f2ff';
             particles.forEach(p => {
-                bgCtx.beginPath();
-                bgCtx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-                bgCtx.fill();
-                p.y -= p.speed;
-                if(p.y < 0) p.y = bgCanvas.height;
+                bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); bgCtx.fill();
+                p.y -= p.speed; if(p.y < 0) p.y = bgCanvas.height;
             });
             requestAnimationFrame(drawBG);
         }
-        window.addEventListener('resize', initBG);
-        initBG(); drawBG();
+        window.addEventListener('resize', initBG); initBG(); drawBG();
 
         // --- CORE ENGINE ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const backBtn = document.getElementById('back-to-menu');
         const mainMenu = document.getElementById('main-menu');
-        
-        let activeGame = null;
-        let isPlaying = false;
-        let keys = {};
-
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+        let activeGame = null, isPlaying = false, keys = {};
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
 
         const AudioEngine = {
             ctx: null, isMuted: true,
@@ -458,90 +458,178 @@
                 if(this.isMuted || !this.ctx) return;
                 const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
                 o.type = t; o.frequency.setValueAtTime(f, this.ctx.currentTime);
-                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + d);
-                o.connect(g); g.connect(this.ctx.destination);
-                o.start(); o.stop(this.ctx.currentTime + d);
+                g.gain.setValueAtTime(0.1, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + d);
+                o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + d);
             }
         };
         document.getElementById('audio-toggle').onclick = () => AudioEngine.toggleMute();
 
         // --- NAVIGATION ---
         document.getElementById('card-wave').onclick = () => {
-            mainMenu.classList.add('hidden');
-            document.getElementById('wave-level-select').classList.remove('hidden');
-            backBtn.style.display = 'block';
-            renderWaveLevels(0);
+            mainMenu.classList.add('hidden'); document.getElementById('wave-level-select').classList.remove('hidden');
+            backBtn.style.display = 'block'; renderWaveLevels();
         };
-        document.getElementById('card-math').onclick = () => switchGame('math');
+        document.getElementById('card-math').onclick = () => {
+             mainMenu.classList.add('hidden'); document.getElementById('math-select-screen').classList.remove('hidden');
+             backBtn.style.display = 'block';
+        };
         document.getElementById('card-clicker').onclick = () => switchGame('clicker');
-        
         document.getElementById('close-level-select').onclick = () => {
-            document.getElementById('wave-level-select').classList.add('hidden');
-            mainMenu.classList.remove('hidden');
-            backBtn.style.display = 'none';
+            document.getElementById('wave-level-select').classList.add('hidden'); mainMenu.classList.remove('hidden'); backBtn.style.display = 'none';
         };
 
         function switchGame(mode, data = null) {
-            activeGame = mode;
-            mainMenu.classList.add('hidden');
-            backBtn.style.display = 'block';
+            activeGame = mode; mainMenu.classList.add('hidden'); backBtn.style.display = 'block';
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`${mode}-ui`).classList.remove('hidden');
             if(mode === 'wave') startWave(data);
-            if(mode === 'math') startMath();
+            if(mode === 'math') startMath(data);
             if(mode === 'clicker') startClicker();
         }
 
         backBtn.onclick = () => {
+            if(activeGame === 'clicker') saveGame();
             activeGame = null; isPlaying = false;
-            mainMenu.classList.remove('hidden');
-            backBtn.style.display = 'none';
+            mainMenu.classList.remove('hidden'); backBtn.style.display = 'none';
             document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui').forEach(el => el.classList.add('hidden'));
+            document.getElementById('math-input').blur();
         };
 
-        // --- WAVE & MATH DASH (Kept from previous version) ---
-        // ... (Logics maintained but simplified for brevity in this block, essentially identical to your provided file)
+        // --- WAVE ENGINE ---
         let score = 0, player = { x: 0, y: 0, trail: [] }, walls = [], waveLvl = null;
         const WAVE_LEVELS = [{id:1, speed:5, gap:360, color:'#00f2ff'}, {id:2, speed:6, gap:320, color:'#00ff88'}, {id:3, speed:7, gap:280, color:'#ff007f'}];
-        function renderWaveLevels(p) { 
-            const grid = document.getElementById('level-grid-container'); grid.innerHTML = '';
+        function renderWaveLevels() {
+            const container = document.getElementById('level-grid-container'); container.innerHTML = '';
             WAVE_LEVELS.forEach(l => {
                 const b = document.createElement('button'); b.className = 'btn-ui'; b.innerText = `LEVEL ${l.id}`;
-                b.onclick = () => { document.getElementById('wave-level-select').classList.add('hidden'); switchGame('wave', l); };
-                grid.appendChild(b);
+                b.onclick = () => switchGame('wave', l);
+                container.appendChild(b);
             });
         }
         function startWave(l) { waveLvl = l; isPlaying = true; score = 0; player = {x:200, y:canvas.height/2, trail:[]}; walls = []; spawnWall(800); }
         function spawnWall(x) { walls.push({x, w:80, top: Math.random()*300+50, bottom: 0}); walls[walls.length-1].bottom = walls[walls.length-1].top + waveLvl.gap; }
         
-        let mathEnergy = 100, mathAns = 0;
-        function startMath() { mathEnergy = 100; isPlaying = true; genMath(); }
-        function genMath() { const n1 = Math.floor(Math.random()*12); const n2 = Math.floor(Math.random()*12); mathAns = n1 + n2; document.getElementById('math-problem').innerText = `${n1} + ${n2}`; }
-        document.getElementById('math-input').oninput = (e) => { if(parseInt(e.target.value) === mathAns) { mathEnergy = Math.min(100, mathEnergy+15); e.target.value = ''; genMath(); } };
+        // --- MATH DASH ENGINE ---
+        let mathEnergy = 100, mathAns = 0, mathConfig = { op: '+', diff: 'easy' };
+        
+        // Setup Button Listeners for Config
+        document.querySelectorAll('#math-op-btns .btn-ui').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('#math-op-btns .btn-ui').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active'); mathConfig.op = btn.dataset.op;
+            }
+        });
+        document.querySelectorAll('#math-diff-btns .btn-ui').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('#math-diff-btns .btn-ui').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active'); mathConfig.diff = btn.dataset.diff;
+            }
+        });
+
+        document.getElementById('start-math-btn').onclick = () => switchGame('math', mathConfig);
+
+        function startMath(config) {
+            mathConfig = config; mathEnergy = 100; isPlaying = true; 
+            genMath();
+            const input = document.getElementById('math-input');
+            input.value = '';
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function genMath() {
+            let n1, n2, symbol;
+            const diff = mathConfig.diff;
+            const op = mathConfig.op;
+
+            // Range Logic
+            let range = 10;
+            if (diff === 'medium') range = 25;
+            if (diff === 'hard') range = 100;
+            if (diff === 'insane') range = 500;
+
+            if (op === '+') {
+                n1 = Math.floor(Math.random() * range);
+                n2 = Math.floor(Math.random() * range);
+                mathAns = n1 + n2; symbol = '+';
+            } else if (op === '-') {
+                n1 = Math.floor(Math.random() * range) + (range/2);
+                n2 = Math.floor(Math.random() * n1); // Ensure positive result
+                mathAns = n1 - n2; symbol = '-';
+            } else if (op === '*') {
+                // Adjust ranges for multiplication so they aren't impossible
+                let mRange = diff === 'easy' ? 10 : (diff === 'medium' ? 15 : (diff === 'hard' ? 25 : 50));
+                n1 = Math.floor(Math.random() * mRange);
+                n2 = Math.floor(Math.random() * (diff === 'easy' ? 10 : 12));
+                mathAns = n1 * n2; symbol = '×';
+            }
+
+            document.getElementById('math-problem').innerText = `${n1} ${symbol} ${n2}`;
+        }
+
+        document.getElementById('math-input').oninput = (e) => {
+            if(parseInt(e.target.value) === mathAns) {
+                let gain = 15;
+                if (mathConfig.diff === 'hard') gain = 10;
+                if (mathConfig.diff === 'insane') gain = 8;
+                
+                mathEnergy = Math.min(100, mathEnergy + gain);
+                e.target.value = '';
+                genMath();
+                AudioEngine.playNote(800, 'sine', 0.1);
+            }
+        };
 
         // --- COOKIE CRUNCH LOGIC ---
         let cookies = 0;
-        let totalCookiesEarned = 0;
         let clickPower = 1;
         let cookiesPerSecond = 0;
 
         const shopItems = [
-            { id: 'clicker_upgrade', name: 'Reinforced Finger', type: 'click', cost: 15, power: 1, owned: 0, icon: '👆', desc: 'Each click yields +1 cookie.' },
-            { id: 'cursor', name: 'Auto-Cursor', type: 'auto', cost: 50, cps: 1, owned: 0, icon: '🖱️', desc: 'Clicks for you once every second.' },
-            { id: 'grandma', name: 'Cookie Grandma', type: 'auto', cost: 250, cps: 5, owned: 0, icon: '👵', desc: 'Bakes fresh cookies at a steady pace.' },
-            { id: 'farm', name: 'Cookie Farm', type: 'auto', cost: 1200, cps: 20, owned: 0, icon: '🚜', desc: 'Grows cookie plants in nutrient soil.' },
-            { id: 'factory', name: 'Cookie Factory', type: 'auto', cost: 5000, cps: 65, owned: 0, icon: '🏭', desc: 'Mass produces high-quality treats.' },
-            { id: 'bank', name: 'Cookie Bank', type: 'auto', cost: 25000, cps: 200, owned: 0, icon: '🏦', desc: 'Generates interest in cookies.' }
+            { id: 'click_1', name: 'Reinforced Finger', type: 'click', cost: 15, power: 1, owned: 0, icon: '👆', desc: 'Each click yields +1 cookie.' },
+            { id: 'click_2', name: 'Titanium Tapper', type: 'click', cost: 500, power: 10, owned: 0, icon: '⚡', desc: 'Surgical precision clicks (+10/click).' },
+            { id: 'auto_1', name: 'Auto-Cursor', type: 'auto', cost: 100, cps: 1, owned: 0, icon: '🖱️', desc: 'Clicks automatically once every second.' },
+            { id: 'auto_2', name: 'Cookie Grandma', type: 'auto', cost: 500, cps: 5, owned: 0, icon: '👵', desc: 'Bakes fresh cookies at a steady pace.' },
+            { id: 'auto_3', name: 'Cookie Farm', type: 'auto', cost: 2500, cps: 18, owned: 0, icon: '🚜', desc: 'Grows cookie plants in nutrient soil.' },
+            { id: 'auto_4', name: 'Cookie Factory', type: 'auto', cost: 10000, cps: 55, owned: 0, icon: '🏭', desc: 'Mass produces high-quality treats.' },
+            { id: 'auto_5', name: 'Cookie Bank', type: 'auto', cost: 50000, cps: 160, owned: 0, icon: '🏦', desc: 'Generates interest in cookies.' },
+            { id: 'auto_6', name: 'Alchemy Lab', type: 'auto', cost: 200000, cps: 450, owned: 0, icon: '🧪', desc: 'Turns lead into delicious chocolate chips.' },
+            { id: 'auto_7', name: 'Portal', type: 'auto', cost: 1000000, cps: 1200, owned: 0, icon: '🌀', desc: 'Opens a link to the Cookie Dimension.' },
+            { id: 'auto_8', name: 'Time Machine', type: 'auto', cost: 15000000, cps: 8000, owned: 0, icon: '⏳', desc: 'Brings cookies from before they were eaten.' }
         ];
 
-        function startClicker() {
-            isPlaying = true;
-            updateClickerUI();
+        function saveGame() {
+            const data = {
+                cookies, clickPower, cps: cookiesPerSecond,
+                items: shopItems.map(i => ({ id: i.id, owned: i.owned, cost: i.cost }))
+            };
+            localStorage.setItem('cookieCrunchSave', JSON.stringify(data));
+            showSaveIndicator();
         }
+
+        function loadGame() {
+            const saved = localStorage.getItem('cookieCrunchSave');
+            if (saved) {
+                const data = JSON.parse(saved);
+                cookies = data.cookies || 0;
+                clickPower = data.clickPower || 1;
+                cookiesPerSecond = data.cps || 0;
+                data.items.forEach(savedItem => {
+                    const item = shopItems.find(i => i.id === savedItem.id);
+                    if (item) { item.owned = savedItem.owned; item.cost = savedItem.cost; }
+                });
+            }
+        }
+
+        function showSaveIndicator() {
+            const el = document.getElementById('save-indicator');
+            el.style.opacity = 1;
+            setTimeout(() => el.style.opacity = 0, 2000);
+        }
+
+        function startClicker() { loadGame(); isPlaying = true; updateClickerUI(); }
 
         document.getElementById('big-cookie').addEventListener('mousedown', (e) => {
             cookies += clickPower;
-            totalCookiesEarned += clickPower;
             AudioEngine.playNote(400, 'sine', 0.05);
             spawnFloatingText(e.clientX, e.clientY, `+${clickPower}`);
             updateClickerUI();
@@ -549,17 +637,15 @@
 
         function spawnFloatingText(x, y, text) {
             const el = document.createElement('div');
-            el.className = 'floating-text';
-            el.innerText = text;
-            el.style.left = `${x}px`;
-            el.style.top = `${y}px`;
+            el.className = 'floating-text'; el.innerText = text;
+            el.style.left = `${x}px`; el.style.top = `${y}px`;
             document.querySelector('.clicker-main').appendChild(el);
             setTimeout(() => el.remove(), 800);
         }
 
         function updateClickerUI() {
             document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
-            document.getElementById('cps-val').innerText = cookiesPerSecond.toFixed(1);
+            document.getElementById('cps-val').innerText = cookiesPerSecond.toLocaleString();
             document.getElementById('cpc-val').innerText = clickPower.toLocaleString();
             renderShop();
         }
@@ -567,105 +653,88 @@
         function renderShop() {
             const container = document.getElementById('shop-container');
             container.innerHTML = '';
-
             shopItems.forEach((item) => {
                 const canAfford = cookies >= item.cost;
                 const div = document.createElement('div');
                 div.className = `shop-item ${canAfford ? 'affordable' : 'locked'}`;
-                
                 div.innerHTML = `
                     <div style="display: flex; align-items: center;">
                         <span class="item-icon">${item.icon}</span>
                         <div class="item-details">
                             <span class="item-name">${item.name}</span>
-                            <span class="item-cost">Price: ${Math.floor(item.cost).toLocaleString()}</span>
+                            <span class="item-cost">Cost: ${Math.floor(item.cost).toLocaleString()}</span>
                             <div style="font-size: 0.6rem; opacity: 0.6; margin-top: 4px;">${item.desc}</div>
                         </div>
                         <div class="item-owned">${item.owned}</div>
                     </div>
                 `;
-
                 div.onclick = () => {
                     if (cookies >= item.cost) {
-                        cookies -= item.cost;
-                        item.owned++;
-                        
-                        if (item.type === 'click') {
-                            clickPower += item.power;
-                        } else {
-                            cookiesPerSecond += item.cps;
-                        }
-                        
-                        item.cost = Math.ceil(item.cost * 1.15); // Increase price by 15%
-                        AudioEngine.playNote(600 + (item.owned * 10), 'sine', 0.1);
+                        cookies -= item.cost; item.owned++;
+                        if (item.type === 'click') clickPower += item.power;
+                        else cookiesPerSecond += item.cps;
+                        item.cost = Math.ceil(item.cost * 1.15);
+                        AudioEngine.playNote(600 + (item.owned * 5), 'sine', 0.1);
                         updateClickerUI();
+                        saveGame();
                     }
                 };
                 container.appendChild(div);
             });
         }
 
+        setInterval(() => { if (activeGame === 'clicker') saveGame(); }, 5000);
+
         // --- MAIN LOOP ---
         function loop() {
             if (isPlaying) {
                 if (activeGame === 'wave') {
-                    player.x += waveLvl.speed;
-                    player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
-                    player.trail.push({x: player.x, y: player.y});
-                    if(player.trail.length > 20) player.trail.shift();
+                    player.x += waveLvl.speed; player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
+                    player.trail.push({x: player.x, y: player.y}); if(player.trail.length > 20) player.trail.shift();
                     if(player.y < 0 || player.y > canvas.height) isPlaying = false;
-                    walls.forEach(w => {
-                        if(player.x+10 > w.x && player.x-10 < w.x+w.w && (player.y-10 < w.top || player.y+10 > w.bottom)) isPlaying = false;
-                    });
+                    walls.forEach(w => { if(player.x+10 > w.x && player.x-10 < w.x+w.w && (player.y-10 < w.top || player.y+10 > w.bottom)) isPlaying = false; });
                     if(player.x > walls[0].x + 400) { walls.shift(); spawnWall(walls[walls.length-1].x+600); score++; document.getElementById('wave-score-container').innerText = score; }
                 }
-
                 if (activeGame === 'math') {
-                    mathEnergy -= 0.15;
-                    if (mathEnergy <= 0) isPlaying = false;
-                }
-
-                if (activeGame === 'clicker') {
-                    // Logic for passive cookie generation
-                    const income = cookiesPerSecond / 60; // Assuming 60fps
-                    cookies += income;
-                    totalCookiesEarned += income;
-                    document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
+                    let drain = 0.15;
+                    if (mathConfig.diff === 'medium') drain = 0.2;
+                    if (mathConfig.diff === 'hard') drain = 0.25;
+                    if (mathConfig.diff === 'insane') drain = 0.35;
                     
-                    // Periodically refresh shop affordability status without full re-render
-                    if (Math.floor(Date.now() / 500) % 2 === 0) {
-                        const items = document.querySelectorAll('.shop-item');
-                        shopItems.forEach((item, i) => {
-                            if (cookies >= item.cost) items[i]?.classList.add('affordable');
-                            else items[i]?.classList.remove('affordable');
-                        });
+                    mathEnergy -= drain; 
+                    if (mathEnergy <= 0) {
+                        isPlaying = false;
+                        document.getElementById('math-input').blur();
                     }
+                }
+                if (activeGame === 'clicker') {
+                    cookies += cookiesPerSecond / 60;
+                    document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
                 }
             }
 
             ctx.clearRect(0,0,canvas.width, canvas.height);
             if (activeGame === 'wave') {
-                ctx.save(); ctx.translate(-player.x + 200, 0);
-                ctx.fillStyle = waveLvl.color;
+                ctx.save(); ctx.translate(-player.x + 200, 0); ctx.fillStyle = waveLvl.color;
                 walls.forEach(w => { ctx.fillRect(w.x, 0, w.w, w.top); ctx.fillRect(w.x, w.bottom, w.w, canvas.height); });
                 ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.beginPath();
                 player.trail.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke();
                 ctx.restore();
             }
-
             if (activeGame === 'math') {
                 ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(canvas.width/2 - 100, 50, 200, 10);
                 ctx.fillStyle = '#ff007f'; ctx.fillRect(canvas.width/2 - 100, 50, (mathEnergy/100)*200, 10);
             }
-
             requestAnimationFrame(loop);
         }
 
         window.onkeydown = (e) => keys[e.key] = true;
         window.onkeyup = (e) => keys[e.key] = false;
-        window.ontouchstart = (e) => { if(e.target.id === 'big-cookie') return; keys['touchstart'] = true; };
+        window.ontouchstart = (e) => { 
+            if(e.target.id === 'big-cookie' || e.target.closest('.shop-item') || e.target.id === 'math-input') return; 
+            keys['touchstart'] = true; 
+        };
         window.ontouchend = () => keys['touchstart'] = false;
-        
         loop();
     </script>
 </body>
