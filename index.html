@@ -175,60 +175,6 @@
         }
         .owner-tag span { color: var(--neon-blue); font-weight: 900; }
 
-        /* --- CLICKER UI REFINED --- */
-        #clicker-ui {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            background: #020208;
-            z-index: 500;
-        }
-        .clicker-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-        }
-        .clicker-shop {
-            width: 360px;
-            padding: 30px;
-            background: rgba(255,255,255,0.02);
-            backdrop-filter: blur(20px);
-            border-left: 1px solid var(--glass-border);
-            overflow-y: auto;
-        }
-        #big-cookie {
-            width: 240px;
-            height: 240px;
-            background: radial-gradient(circle at 30% 30%, #ffcc33, #aa6600);
-            border-radius: 50%;
-            cursor: pointer;
-            border: 10px solid rgba(255,255,255,0.9);
-            box-shadow: 0 0 50px rgba(255, 170, 0, 0.4), inset -10px -10px 20px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 6rem;
-            transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1);
-        }
-        #big-cookie:active { transform: scale(0.9); }
-
-        .stat-card {
-            background: var(--glass);
-            padding: 20px;
-            border-radius: 20px;
-            text-align: center;
-            margin-bottom: 30px;
-            border: 1px solid var(--glass-border);
-            width: 100%;
-            max-width: 300px;
-        }
-
         /* --- SHARED SCREEN UI --- */
         .screen {
             position: fixed;
@@ -241,10 +187,39 @@
             border: 1px solid var(--glass-border);
             backdrop-filter: blur(30px);
             z-index: 1500;
-            width: 480px;
+            width: 500px;
             max-width: 90vw;
             box-shadow: 0 40px 100px rgba(0,0,0,0.9);
             text-align: center;
+        }
+
+        .level-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+            min-height: 200px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .page-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .page-dot.active {
+            background: var(--neon-blue);
+            box-shadow: 0 0 10px var(--neon-blue);
+            transform: scale(1.2);
         }
 
         .action-btn {
@@ -266,39 +241,22 @@
         #wave-ui, #math-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
         #math-input { pointer-events: auto; }
 
-        /* --- TRIAL SELECTION STYLING --- */
-        .trial-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 15px;
-            cursor: pointer;
-            transition: 0.3s;
+        /* --- CLICKER UI --- */
+        #clicker-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
+            background: #020208;
+            z-index: 500;
         }
-        .trial-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: scale(1.05);
-        }
-        .trial-preview {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            position: relative;
-        }
-        .trial-preview::after {
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 60%; height: 4px;
-            background: white;
-            border-radius: 2px;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            box-shadow: 0 0 10px currentColor;
-        }
+        .clicker-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
+        .clicker-shop { width: 360px; padding: 30px; background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border-left: 1px solid var(--glass-border); overflow-y: auto; }
+        #big-cookie { width: 200px; height: 200px; background: radial-gradient(circle at 30% 30%, #ffcc33, #aa6600); border-radius: 50%; cursor: pointer; border: 8px solid rgba(255,255,255,0.9); box-shadow: 0 0 50px rgba(255, 170, 0, 0.4); display: flex; align-items: center; justify-content: center; font-size: 5rem; transition: 0.1s; }
+        #big-cookie:active { transform: scale(0.9); }
+        .stat-card { background: var(--glass); padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 30px; border: 1px solid var(--glass-border); width: 100%; max-width: 250px; }
 
         @media (max-width: 768px) {
             .clicker-ui { flex-direction: column; }
@@ -341,11 +299,12 @@
         </div>
     </div>
 
-    <!-- Wave UI Level Selection -->
+    <!-- Wave Level Select (10 Levels / 3 Pages) -->
     <div id="wave-level-select" class="screen hidden">
-        <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px;">CHOOSE YOUR TRAIL</h2>
-        <div class="level-grid" id="level-grid-container" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 25px 0;"></div>
-        <button class="action-btn" id="close-level-select" style="background: rgba(255,255,255,0.05); width: 100%; border: 1px solid var(--glass-border);">Back to Menu</button>
+        <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Select Trial</h2>
+        <div class="level-grid" id="level-grid-container"></div>
+        <div class="pagination" id="pagination-dots"></div>
+        <button class="action-btn" id="close-level-select" style="background: rgba(255,255,255,0.05); width: 100%; border: 1px solid var(--glass-border);">Back to Hub</button>
     </div>
 
     <div id="wave-ui" class="hidden">
@@ -374,7 +333,7 @@
         <div class="clicker-main">
             <div class="stat-card">
                 <div class="stat-label" style="font-size: 0.7rem; opacity: 0.5;">Balance</div>
-                <div id="cookie-count" class="stat-val" style="font-size: 3rem; color: var(--neon-orange); font-weight: 900;">0</div>
+                <div id="cookie-count" class="stat-val" style="font-size: 2.5rem; color: var(--neon-orange); font-weight: 900;">0</div>
                 <div class="stat-label" style="font-size: 0.8rem; margin-top: 5px;"><span id="cps-val" style="color: var(--neon-green)">0</span> /sec</div>
             </div>
             <div id="big-cookie">🍪</div>
@@ -419,7 +378,7 @@
         window.addEventListener('resize', initBG);
         initBG(); drawBG();
 
-        // --- CORE ENGINE ---
+        // --- CORE GAME ENGINE ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const backBtn = document.getElementById('back-to-menu');
@@ -436,6 +395,7 @@
         window.addEventListener('resize', resize);
         resize();
 
+        // Audio
         const AudioEngine = {
             ctx: null, isMuted: true,
             init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
@@ -456,7 +416,8 @@
         document.getElementById('card-wave').onclick = () => {
             mainMenu.classList.add('hidden');
             document.getElementById('wave-level-select').classList.remove('hidden');
-            renderWaveLevels();
+            backBtn.style.display = 'block';
+            renderWaveLevels(0); // Start at page 1
         };
         document.getElementById('card-math').onclick = () => switchGame('math');
         document.getElementById('card-clicker').onclick = () => switchGame('clicker');
@@ -464,6 +425,7 @@
         document.getElementById('close-level-select').onclick = () => {
             document.getElementById('wave-level-select').classList.add('hidden');
             mainMenu.classList.remove('hidden');
+            backBtn.style.display = 'none';
         };
 
         function switchGame(mode, data = null) {
@@ -483,35 +445,59 @@
             document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui').forEach(el => el.classList.add('hidden'));
         };
 
-        // --- NEON WAVE LOGIC ---
+        // --- NEON WAVE LOGIC (10 Levels) ---
         let player = { x: 0, y: 0, trail: [], angle: 0 }, walls = [], waveLvl = null, score = 0;
         const WAVE_LEVELS = [
-            { id: 1, speed: 5, gap: 360, color: '#00f2ff', name: 'CYAN' },
-            { id: 2, speed: 6, gap: 340, color: '#00ff88', name: 'MINT' },
-            { id: 3, speed: 7, gap: 320, color: '#ff007f', name: 'ROSE' },
-            { id: 4, speed: 8, gap: 300, color: '#ffaa00', name: 'AMBER' },
-            { id: 5, speed: 9, gap: 280, color: '#bc13fe', name: 'VOID' },
-            { id: 6, speed: 10, gap: 260, color: '#ff4444', name: 'CORE' }
+            { id: 1, speed: 5, gap: 360, color: '#00f2ff' },
+            { id: 2, speed: 5.5, gap: 350, color: '#00ff88' },
+            { id: 3, speed: 6, gap: 340, color: '#ff007f' },
+            { id: 4, speed: 6.5, gap: 330, color: '#ffaa00' },
+            { id: 5, speed: 7, gap: 320, color: '#bc13fe' },
+            { id: 6, speed: 7.5, gap: 310, color: '#ff4444' },
+            { id: 7, speed: 8, gap: 300, color: '#44ff44' },
+            { id: 8, speed: 8.5, gap: 290, color: '#ffff00' },
+            { id: 9, speed: 9, gap: 280, color: '#0044ff' },
+            { id: 10, speed: 10, gap: 250, color: '#ffffff' }
         ];
 
-        function renderWaveLevels() {
+        const LEVELS_PER_PAGE = 4;
+
+        function renderWaveLevels(pageIndex) {
             const container = document.getElementById('level-grid-container');
+            const dots = document.getElementById('pagination-dots');
             container.innerHTML = '';
-            WAVE_LEVELS.forEach(lvl => {
-                const card = document.createElement('div');
-                card.className = 'trial-card';
-                card.style.borderColor = `${lvl.color}33`;
-                card.innerHTML = `
-                    <div class="trial-preview" style="background: ${lvl.color}22; color: ${lvl.color}; border: 1px solid ${lvl.color}"></div>
-                    <div style="font-weight: 800; font-size: 0.7rem; color: ${lvl.color}">${lvl.name}</div>
-                    <div style="font-size: 0.6rem; opacity: 0.5;">SPEED ${lvl.speed}</div>
+            dots.innerHTML = '';
+
+            const start = pageIndex * LEVELS_PER_PAGE;
+            const end = Math.min(start + LEVELS_PER_PAGE, WAVE_LEVELS.length);
+            const totalPages = Math.ceil(WAVE_LEVELS.length / LEVELS_PER_PAGE);
+
+            // Render Levels
+            for(let i = start; i < end; i++) {
+                const lvl = WAVE_LEVELS[i];
+                const btn = document.createElement('button');
+                btn.className = 'btn-ui';
+                btn.style.borderLeft = `4px solid ${lvl.color}`;
+                btn.style.textAlign = 'left';
+                btn.style.paddingLeft = '20px';
+                btn.innerHTML = `
+                    <span style="font-weight:900; color: ${lvl.color}">TRIAL ${lvl.id}</span><br>
+                    <span style="font-size:0.6rem; opacity:0.6; letter-spacing:1px">SPD: ${lvl.speed} | GAP: ${lvl.gap}</span>
                 `;
-                card.onclick = () => { 
+                btn.onclick = () => { 
                     document.getElementById('wave-level-select').classList.add('hidden'); 
                     switchGame('wave', lvl); 
                 };
-                container.appendChild(card);
-            });
+                container.appendChild(btn);
+            }
+
+            // Render Dots
+            for(let i = 0; i < totalPages; i++) {
+                const dot = document.createElement('div');
+                dot.className = `page-dot ${i === pageIndex ? 'active' : ''}`;
+                dot.onclick = () => renderWaveLevels(i);
+                dots.appendChild(dot);
+            }
         }
 
         function startWave(lvl) {
@@ -597,11 +583,7 @@
                             if(player.y-10 < w.top || player.y+10 > w.bottom) dieWave();
                         }
                     });
-                    if(player.x > walls[0].x + 300) { 
-                        walls.shift(); spawnWall(walls[walls.length-1].x + 600); 
-                        score++; 
-                        document.getElementById('wave-score-container').innerText = score; 
-                    }
+                    if(player.x > walls[0].x + 300) { walls.shift(); spawnWall(walls[walls.length-1].x + 600); score++; document.getElementById('wave-score-container').innerText = score; }
                 }
                 if (activeGame === 'math') { mathEnergy -= 0.15; if(mathEnergy <= 0) { isPlaying = false; document.getElementById('math-over').classList.remove('hidden'); }}
                 if (activeGame === 'clicker') { cookies += cps/60; updateClickerUI(); }
