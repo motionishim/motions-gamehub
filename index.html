@@ -399,7 +399,7 @@
             mainMenu.classList.add('hidden');
             document.getElementById('wave-level-select').classList.remove('hidden');
             backBtn.style.display = 'block';
-            currentLevelPage = 0; // Reset to first page
+            currentLevelPage = 0; 
             renderWaveLevels();
         };
 
@@ -436,7 +436,7 @@
             if (mode === 'clicker') startClicker();
         }
 
-        // --- COOKIE CLICKER GAME (Logic remains as provided) ---
+        // --- COOKIE CLICKER GAME ---
         let cookies = 0; let cps = 0; let clickPower = 1;
         const shopItems = [
             { id: 'clicker', name: 'Mega-Click', cost: 10, baseCps: 0, power: 1, owned: 0, desc: '+1 Click Power' },
@@ -482,21 +482,23 @@
 
         // --- NEON WAVE GAME ---
         let player = { x: 0, y: 0 }, walls = [], waveLvl = null, score = 0;
+        // Adjusted gaps and spacing to make it more reachable
         const WAVE_LEVELS = [
-            { id: 1, speed: 5, gap: 300, color: '#00f2ff' },
-            { id: 2, speed: 5.5, gap: 290, color: '#00e2ff' },
-            { id: 3, speed: 6, gap: 280, color: '#ff007f' },
-            { id: 4, speed: 6.5, gap: 270, color: '#ff00a0' },
-            { id: 5, speed: 7, gap: 260, color: '#00ff88' },
-            { id: 6, speed: 7.5, gap: 250, color: '#00ff66' },
-            { id: 7, speed: 8, gap: 240, color: '#ffaa00' },
-            { id: 8, speed: 8.5, gap: 230, color: '#ffcc00' },
-            { id: 9, speed: 9, gap: 220, color: '#bc13fe' },
-            { id: 10, speed: 10, gap: 200, color: '#ff0000' }
+            { id: 1, speed: 5, gap: 350, color: '#00f2ff' },
+            { id: 2, speed: 5.5, gap: 340, color: '#00e2ff' },
+            { id: 3, speed: 6, gap: 320, color: '#ff007f' },
+            { id: 4, speed: 6.5, gap: 300, color: '#ff00a0' },
+            { id: 5, speed: 7, gap: 280, color: '#00ff88' },
+            { id: 6, speed: 7.5, gap: 270, color: '#00ff66' },
+            { id: 7, speed: 8, gap: 260, color: '#ffaa00' },
+            { id: 8, speed: 8.5, gap: 250, color: '#ffcc00' },
+            { id: 9, speed: 9, gap: 240, color: '#bc13fe' },
+            { id: 10, speed: 10, gap: 230, color: '#ff0000' }
         ];
 
         let currentLevelPage = 0;
         const itemsPerPage = 4;
+        const HORIZONTAL_SPACING = 600; // Increased from 400 for better reachability
 
         function renderWaveLevels() {
             const container = document.getElementById('level-grid-container');
@@ -524,26 +526,13 @@
                 container.appendChild(btn);
             });
 
-            // Update Pagination UI
             pageIndicator.innerText = `Page ${currentLevelPage + 1} / ${totalPages}`;
             prevBtn.disabled = currentLevelPage === 0;
             nextBtn.disabled = currentLevelPage >= totalPages - 1;
         }
 
-        document.getElementById('prev-page').onclick = () => {
-            if (currentLevelPage > 0) {
-                currentLevelPage--;
-                renderWaveLevels();
-            }
-        };
-
-        document.getElementById('next-page').onclick = () => {
-            const totalPages = Math.ceil(WAVE_LEVELS.length / itemsPerPage);
-            if (currentLevelPage < totalPages - 1) {
-                currentLevelPage++;
-                renderWaveLevels();
-            }
-        };
+        document.getElementById('prev-page').onclick = () => { if (currentLevelPage > 0) { currentLevelPage--; renderWaveLevels(); }};
+        document.getElementById('next-page').onclick = () => { const totalPages = Math.ceil(WAVE_LEVELS.length / itemsPerPage); if (currentLevelPage < totalPages - 1) { currentLevelPage++; renderWaveLevels(); }};
 
         function startWave(lvl) {
             waveLvl = lvl; 
@@ -551,9 +540,10 @@
             score = 0;
             player = { x: 200, y: canvas.height/2 };
             walls = [];
-            for(let i=0; i<3; i++) spawnWall(800 + i*400);
+            for(let i=0; i<3; i++) spawnWall(800 + i * HORIZONTAL_SPACING);
             document.getElementById('wave-over').classList.add('hidden');
             document.getElementById('wave-level-display').innerText = `Level: ${lvl.id}`;
+            document.getElementById('wave-score-container').innerText = '0';
         }
 
         function spawnWall(x) {
@@ -563,7 +553,7 @@
 
         document.getElementById('wave-retry').onclick = () => startWave(waveLvl);
 
-        // --- MATH DASH GAME (Logic remains as provided) ---
+        // --- MATH DASH GAME ---
         let mathEnergy = 100, mathAns = 0;
         function startMath() { mathEnergy = 100; isPlaying = true; document.getElementById('math-over').classList.add('hidden'); genMath(); const input = document.getElementById('math-input'); input.value = ''; input.focus(); }
         function genMath() { const n1 = Math.floor(Math.random() * 12) + 1; const n2 = Math.floor(Math.random() * 12) + 1; mathAns = n1 + n2; document.getElementById('math-problem').innerText = `${n1} + ${n2}`; }
@@ -582,7 +572,12 @@
                             if (player.y - 10 < w.top || player.y + 10 > w.bottom) { isPlaying = false; document.getElementById('wave-over').classList.remove('hidden'); }
                         }
                     });
-                    if (player.x > walls[0].x + walls[0].w + 200) { walls.shift(); spawnWall(walls[walls.length-1].x + 400); score++; document.getElementById('wave-score-container').innerText = score; }
+                    if (player.x > walls[0].x + walls[0].w + 200) { 
+                        walls.shift(); 
+                        spawnWall(walls[walls.length-1].x + HORIZONTAL_SPACING); 
+                        score++; 
+                        document.getElementById('wave-score-container').innerText = score; 
+                    }
                 }
                 if (activeGame === 'math') { mathEnergy -= 0.2; if (mathEnergy <= 0) { isPlaying = false; document.getElementById('math-over').classList.remove('hidden'); }}
                 if (activeGame === 'clicker') { cookies += (cps / 60); updateClickerUI(); }
