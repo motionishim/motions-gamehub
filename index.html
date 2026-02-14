@@ -205,19 +205,6 @@
         .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); }
         .dot.active { background: var(--neon-blue); transform: scale(1.3); }
 
-        #save-indicator { 
-            position: fixed; 
-            bottom: 20px; 
-            left: 20px; 
-            z-index: 2000; 
-            font-size: 0.7rem; 
-            color: var(--neon-green); 
-            opacity: 0; 
-            transition: opacity 0.5s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
         .owner-tag {
             position: fixed;
             bottom: 25px;
@@ -283,15 +270,6 @@
             100% { transform: translateY(-120px); opacity: 0; font-size: 1.8rem; }
         }
 
-        .shop-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
         .shop-item {
             padding: 18px;
             background: rgba(255,255,255,0.03);
@@ -300,29 +278,11 @@
             margin-bottom: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-            user-select: none;
+            display: flex;
+            align-items: center;
         }
-        .shop-item:hover:not(.locked) { 
-            background: rgba(255,255,255,0.08); 
-            border-color: var(--neon-blue);
-            transform: translateX(5px);
-        }
+        .shop-item:hover:not(.locked) { background: rgba(255,255,255,0.08); border-color: var(--neon-blue); }
         .shop-item.locked { opacity: 0.4; cursor: not-allowed; }
-        .shop-item.affordable { border-left: 5px solid var(--neon-green); }
-
-        .item-icon { font-size: 1.5rem; margin-right: 15px; }
-        .item-details { flex: 1; }
-        .item-name { font-weight: 800; color: white; display: block; margin-bottom: 2px; }
-        .item-cost { font-size: 0.8rem; color: var(--neon-green); font-weight: 600; }
-        .item-owned { font-size: 1.2rem; font-weight: 900; color: var(--neon-blue); opacity: 0.8; }
-
-        @media (max-width: 850px) {
-            #clicker-ui { flex-direction: column; overflow-y: auto; }
-            .clicker-shop { width: 100%; border-left: none; border-top: 1px solid var(--glass-border); }
-            .clicker-main { min-height: 60vh; padding: 20px; }
-        }
 
         /* Standard Game UIs */
         .screen {
@@ -345,41 +305,8 @@
         #wave-ui, #math-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
         #math-input { pointer-events: auto; }
         
-        /* Math Screen Specifics */
-        .option-group { margin: 15px 0; }
-        .option-label { font-size: 0.7rem; text-transform: uppercase; color: var(--neon-pink); letter-spacing: 2px; display: block; margin-bottom: 8px; }
-
-        /* Offline Alert */
-        #offline-alert {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--neon-blue);
-            color: black;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-weight: 900;
-            z-index: 3000;
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.5);
-            display: none;
-            animation: slideDown 0.5s ease-out;
-        }
-        @keyframes slideDown {
-            from { transform: translate(-50%, -100%); }
-            to { transform: translate(-50%, 0); }
-        }
-
-        /* Game Over Screen */
-        #game-over-screen {
-            z-index: 2500;
-        }
-        .score-text {
-            font-size: 4rem;
-            font-weight: 900;
-            margin: 20px 0;
-            color: var(--neon-blue);
-        }
+        #game-over-screen { z-index: 2500; }
+        .score-text { font-size: 4rem; font-weight: 900; margin: 20px 0; color: var(--neon-blue); }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -391,21 +318,13 @@
     <button id="music-menu-btn" class="btn-ui">🎵 Music: Off</button>
 
     <div id="music-panel">
-        <div style="margin-bottom: 15px; font-weight: 900; letter-spacing: 1px; font-size: 0.8rem; opacity: 0.6;">SELECT TRACK</div>
         <div class="music-item" data-track="off"><span>🚫</span> Mute All</div>
         <div class="music-item" data-track="lofi"><span>☕</span> Chill Lofi</div>
         <div class="music-item" data-track="rap"><span>🔥</span> Phonk / Rap</div>
         <div class="music-item" data-track="mexican"><span>🎺</span> Mariachi / Fiesta</div>
         <div class="music-item" data-track="synth"><span>🕹️</span> Retro Synth</div>
-        <div style="margin-top: 15px;">
-            <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.3" style="width: 100%; accent-color: var(--neon-blue);">
-            <div style="text-align: center; font-size: 0.6rem; opacity: 0.5; margin-top: 5px;">VOLUME</div>
-        </div>
     </div>
 
-    <div id="save-indicator">Game Saved</div>
-    <div id="offline-alert"></div>
-    
     <div class="owner-tag">Arcade by <span>Matthew</span></div>
 
     <!-- Main Hub -->
@@ -418,17 +337,17 @@
             <div class="game-card" id="card-wave">
                 <div style="font-size: 2.5rem;">☄️</div>
                 <h2>NEON WAVE</h2>
-                <p>Master the pulse and navigate through infinite obstacles.</p>
+                <p>See ahead and plan your moves through the neon pulse.</p>
             </div>
             <div class="game-card math" id="card-math">
                 <div style="font-size: 2.5rem;">⚡</div>
                 <h2>MATH DASH</h2>
-                <p>High-speed mental arithmetic. Select your challenge level.</p>
+                <p>High-speed mental arithmetic challenge.</p>
             </div>
             <div class="game-card clicker" id="card-clicker">
                 <div style="font-size: 2.5rem;">🍪</div>
                 <h2>COOKIE CRUNCH</h2>
-                <p>Build your empire. Earn even while you're offline!</p>
+                <p>Build your empire from scratch.</p>
             </div>
         </div>
     </div>
@@ -436,46 +355,18 @@
     <!-- Wave Level Select -->
     <div id="wave-level-select" class="screen hidden">
         <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Select Level</h2>
-        <div class="level-grid" id="level-grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; min-height: 200px;"></div>
-        
+        <div class="level-grid" id="level-grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;"></div>
         <div class="level-pagination">
-            <button class="btn-ui" id="prev-page" style="padding: 10px 15px;">←</button>
+            <button class="btn-ui" id="prev-page">←</button>
             <div class="page-dots" id="page-dots"></div>
-            <button class="btn-ui" id="next-page" style="padding: 10px 15px;">→</button>
+            <button class="btn-ui" id="next-page">→</button>
         </div>
-
-        <button class="btn-ui" id="close-level-select" style="width: 100%; margin-top: 20px;">Back to Hub</button>
-    </div>
-
-    <!-- Math Select Screen -->
-    <div id="math-select-screen" class="screen hidden">
-        <h2 style="color: var(--neon-pink); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Math Configuration</h2>
-        
-        <div class="option-group">
-            <span class="option-label">Operation</span>
-            <div id="math-op-btns">
-                <button class="btn-ui active" data-op="+">Addition</button>
-                <button class="btn-ui" data-op="-">Subtraction</button>
-                <button class="btn-ui" data-op="*">Multiplication</button>
-            </div>
-        </div>
-
-        <div class="option-group">
-            <span class="option-label">Difficulty</span>
-            <div id="math-diff-btns">
-                <button class="btn-ui active" data-diff="easy">Easy</button>
-                <button class="btn-ui" data-diff="medium">Medium</button>
-                <button class="btn-ui" data-diff="hard">Hard</button>
-                <button class="btn-ui" data-diff="insane">Insane</button>
-            </div>
-        </div>
-
-        <button class="btn-ui" id="start-math-btn" style="width: 100%; background: var(--neon-pink); color: black; margin-top: 20px; font-weight: 900;">START DASH</button>
+        <button class="btn-ui" id="close-level-select" style="width: 100%; margin-top: 20px;">Back</button>
     </div>
 
     <!-- Game Over Screen -->
     <div id="game-over-screen" class="screen hidden">
-        <h2 id="go-title" style="color: var(--neon-pink); margin: 0; letter-spacing: 5px;">GAME OVER</h2>
+        <h2 id="go-title" style="color: var(--neon-pink); margin: 0; letter-spacing: 5px;">CRASHED</h2>
         <div id="go-score" class="score-text">0</div>
         <div style="display: flex; gap: 10px;">
             <button class="btn-ui" id="retry-btn" style="flex: 1; background: var(--neon-green); color: black;">Retry</button>
@@ -490,142 +381,66 @@
 
     <div id="math-ui" class="hidden">
         <div style="position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%;">
-            <div id="math-problem" style="font-size: clamp(3rem, 15vw, 6rem); font-weight: 900; text-shadow: 0 0 30px rgba(255,255,255,0.5);">? + ?</div>
+            <div id="math-problem" style="font-size: 5rem; font-weight: 900;">? + ?</div>
             <input type="number" id="math-input" placeholder="?" style="background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); color: white; font-size: 3rem; text-align: center; width: 220px; border-radius: 20px; margin-top: 30px; outline: none;">
         </div>
     </div>
 
-    <!-- Clicker UI -->
     <div id="clicker-ui" class="hidden">
         <div class="clicker-main">
             <div class="stat-card">
-                <div class="stat-label" style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 2px;">Cookies</div>
-                <div id="cookie-count" class="stat-val" style="font-size: 3rem; color: var(--neon-orange); font-weight: 900;">0</div>
-                <div style="display: flex; justify-content: space-around; margin-top: 15px; border-top: 1px solid var(--glass-border); padding-top: 10px;">
-                    <div>
-                        <div style="font-size: 0.6rem; opacity: 0.5;">PER SEC</div>
-                        <div id="cps-val" style="color: var(--neon-green); font-weight: 800;">0</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.6rem; opacity: 0.5;">PER CLICK</div>
-                        <div id="cpc-val" style="color: var(--neon-blue); font-weight: 800;">1</div>
-                    </div>
-                </div>
+                <div id="cookie-count" style="font-size: 3rem; color: var(--neon-orange); font-weight: 900;">0</div>
+                <div style="font-size: 0.8rem; opacity: 0.6;">COOKIES</div>
             </div>
             <div id="big-cookie">🍪</div>
         </div>
-        <div class="clicker-shop">
-            <div class="shop-header">
-                <h3 style="margin: 0; letter-spacing: 2px; text-transform: uppercase;">Bakery Shop</h3>
-                <span style="font-size: 0.7rem; color: var(--neon-blue);">UPGRADES</span>
-            </div>
-            <div id="shop-container"></div>
-        </div>
+        <div class="clicker-shop" id="shop-container"></div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <script>
-        // --- MUSIC & AUDIO ENGINE ---
+        // --- AUDIO ---
         const MusicEngine = {
-            ctx: null, gainNode: null, currentTrack: 'off', isPlaying: false,
-            init() {
-                if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    this.gainNode = this.ctx.createGain();
-                    this.gainNode.gain.value = 0.3;
-                    this.gainNode.connect(this.ctx.destination);
-                }
-            },
-            playProceduralTrack(type) {
-                this.stop(); if (type === 'off') { document.getElementById('music-menu-btn').innerText = '🎵 Music: Off'; return; }
-                this.init(); this.isPlaying = true; this.currentTrack = type;
-                document.getElementById('music-menu-btn').innerText = `🎵 Track: ${type.toUpperCase()}`;
-                this.loopProcedural(type);
-            },
-            async loopProcedural(type) {
-                let step = 0;
-                while (this.isPlaying && this.currentTrack === type) {
-                    if (type === 'lofi') { this.triggerNote([261, 329, 392, 493][step % 4], 0.1, 0.8, 'triangle'); await new Promise(r => setTimeout(r, 800)); } 
-                    else if (type === 'rap') { if (step % 2 === 0) this.triggerNote(60, 0.3, 0.4, 'sine'); if (step % 4 === 2) this.triggerNote(1200, 0.05, 0.1, 'square'); await new Promise(r => setTimeout(r, 200)); }
-                    else if (type === 'mexican') { this.triggerNote([392, 440, 493, 523, 587][Math.floor(Math.random() * 5)], 0.15, 0.3, 'sawtooth'); await new Promise(r => setTimeout(r, 250)); }
-                    else if (type === 'synth') { this.triggerNote([220, 261, 329, 392, 440, 523][step % 6], 0.1, 0.4, 'square'); await new Promise(r => setTimeout(r, 150)); }
-                    step++;
-                }
-            },
-            triggerNote(freq, vol, duration, type = 'sine') {
-                if(!this.ctx) return;
-                const osc = this.ctx.createOscillator(); const g = this.ctx.createGain();
-                osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                g.gain.setValueAtTime(vol * this.gainNode.gain.value, this.ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-                osc.connect(g); g.connect(this.ctx.destination);
-                osc.start(); osc.stop(this.ctx.currentTime + duration);
-            },
-            stop() { this.isPlaying = false; },
-            setVolume(v) { if(this.gainNode) this.gainNode.gain.value = v; }
+            ctx: null, gainNode: null, currentTrack: 'off',
+            init() { if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.gainNode = this.ctx.createGain(); this.gainNode.gain.value = 0.3; this.gainNode.connect(this.ctx.destination); } },
+            playProceduralTrack(type) { this.init(); this.currentTrack = type; document.getElementById('music-menu-btn').innerText = `🎵 Track: ${type.toUpperCase()}`; },
+            triggerNote(freq, vol, duration) { if(!this.ctx) return; const osc = this.ctx.createOscillator(); const g = this.ctx.createGain(); osc.frequency.setValueAtTime(freq, this.ctx.currentTime); g.gain.setValueAtTime(vol * 0.3, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration); osc.connect(g); g.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration); }
         };
 
-        // --- BACKGROUND EFFECTS ---
+        // --- BACKGROUND ---
         const bgCanvas = document.getElementById('bg-canvas');
         const bgCtx = bgCanvas.getContext('2d');
         let particles = [];
-        function initBG() {
-            bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
-            particles = Array.from({length: 50}, () => ({ x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height, size: Math.random() * 2, speed: Math.random() * 0.5 + 0.1 }));
-        }
-        function drawBG() {
-            bgCtx.clearRect(0,0,bgCanvas.width, bgCanvas.height); bgCtx.fillStyle = '#00f2ff';
-            particles.forEach(p => { bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); bgCtx.fill(); p.y -= p.speed; if(p.y < 0) p.y = bgCanvas.height; });
-            requestAnimationFrame(drawBG);
-        }
+        function initBG() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; particles = Array.from({length: 40}, () => ({ x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height, size: Math.random() * 2, speed: Math.random() * 0.4 + 0.1 })); }
+        function drawBG() { bgCtx.clearRect(0,0,bgCanvas.width, bgCanvas.height); bgCtx.fillStyle = '#00f2ff'; particles.forEach(p => { bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); bgCtx.fill(); p.y -= p.speed; if(p.y < 0) p.y = bgCanvas.height; }); requestAnimationFrame(drawBG); }
         window.addEventListener('resize', initBG); initBG(); drawBG();
 
-        // --- CORE ENGINE ---
+        // --- CORE ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const backBtn = document.getElementById('back-to-menu');
-        const mainMenu = document.getElementById('main-menu');
-        const gameOverScreen = document.getElementById('game-over-screen');
         let activeGame = null, isPlaying = false, keys = {};
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize); resize();
 
-        // --- WAVE ENGINE ---
+        // --- NEON WAVE ENGINE ---
         let score = 0, player = { x: 0, y: 0, trail: [] }, walls = [], waveLvl = null;
         let currentPage = 0;
-        const WAVE_LEVELS = [
-            {id:1, speed:5, gap:380, color:'#00f2ff', name: "Neon City"},
-            {id:2, speed:5.5, gap:360, color:'#00ff88', name: "Grid Run"},
-            {id:3, speed:6, gap:340, color:'#ff007f', name: "Pink Pulse"},
-            {id:4, speed:6.5, gap:320, color:'#bc13fe', name: "Vapor Trail"},
-            {id:5, speed:7, gap:300, color:'#ffaa00', name: "Orange Overload"},
-            {id:6, speed:7.5, gap:280, color:'#ffffff', name: "White Void"},
-            {id:7, speed:8, gap:260, color:'#ff4d4d', name: "Red Alert"},
-            {id:8, speed:8.5, gap:240, color:'#4d79ff', name: "Deep Sea"},
-            {id:9, speed:9, gap:220, color:'#ffff4d', name: "Supernova"},
-            {id:10, speed:10, gap:200, color:'#000000', name: "Eclipse"}
-        ];
+        const WAVE_LEVELS = Array.from({length: 10}, (_, i) => ({
+            id: i + 1, speed: 5 + (i * 0.5), gap: 380 - (i * 18), 
+            color: ['#00f2ff', '#00ff88', '#ff007f', '#bc13fe', '#ffaa00', '#ffffff', '#ff4d4d', '#4d79ff', '#ffff4d', '#9d00ff'][i],
+            name: ["City", "Grid", "Pulse", "Vapor", "Overload", "Void", "Alert", "Deep", "Nova", "Eclipse"][i]
+        }));
 
         function renderWaveLevels() {
             const container = document.getElementById('level-grid-container');
-            const dotsContainer = document.getElementById('page-dots');
-            container.innerHTML = ''; dotsContainer.innerHTML = '';
-            
+            const dots = document.getElementById('page-dots');
+            container.innerHTML = ''; dots.innerHTML = '';
             const start = currentPage * 4;
-            const end = Math.min(start + 4, WAVE_LEVELS.length);
-            
-            for(let i=0; i<3; i++){
-                const dot = document.createElement('div');
-                dot.className = `dot ${i === currentPage ? 'active' : ''}`;
-                dotsContainer.appendChild(dot);
-            }
-
-            WAVE_LEVELS.slice(start, end).forEach(l => {
-                const b = document.createElement('div');
-                b.className = 'game-card';
-                b.style.width = '160px'; b.style.padding = '15px';
-                b.innerHTML = `<div style="font-size: 1.2rem; color:${l.color}">LVL ${l.id}</div><div style="font-size: 0.7rem; opacity: 0.6; margin-top:5px;">${l.name}</div>`;
+            for(let i=0; i<3; i++) { const d = document.createElement('div'); d.className = `dot ${i===currentPage?'active':''}`; dots.appendChild(d); }
+            WAVE_LEVELS.slice(start, start + 4).forEach(l => {
+                const b = document.createElement('div'); b.className = 'game-card'; b.style.width = '140px'; b.style.padding = '10px';
+                b.innerHTML = `<div style="color:${l.color}">LVL ${l.id}</div><div style="font-size:0.6rem;opacity:0.5;">${l.name}</div>`;
                 b.onclick = () => switchGame('wave', l);
                 container.appendChild(b);
             });
@@ -636,123 +451,91 @@
 
         function startWave(l) { 
             waveLvl = l; isPlaying = true; score = 0; 
-            player = {x:200, y:canvas.height/2, trail:[]}; 
-            walls = []; spawnWall(800); 
+            player = {x: 200, y: canvas.height/2, trail: []}; 
+            walls = []; 
+            // PRE-GENERATE walls so we can see them ahead
+            for(let i=0; i<15; i++) { spawnWall(800 + (i * 600)); }
             document.getElementById('wave-score-container').innerText = '0';
         }
-        function spawnWall(x) { walls.push({x, w:80, top: Math.random()*(canvas.height - waveLvl.gap - 100) + 50, bottom: 0}); walls[walls.length-1].bottom = walls[walls.length-1].top + waveLvl.gap; }
+        function spawnWall(x) { 
+            let top = Math.random()*(canvas.height - waveLvl.gap - 100) + 50;
+            walls.push({x, w: 80, top, bottom: top + waveLvl.gap}); 
+        }
 
-        function triggerGameOver(finalScore, title = "GAME OVER") {
+        function triggerGameOver(finalScore, title = "CRASHED") {
             isPlaying = false;
             document.getElementById('go-title').innerText = title;
             document.getElementById('go-score').innerText = finalScore;
-            gameOverScreen.classList.remove('hidden');
-            document.getElementById('math-input').blur();
+            document.getElementById('game-over-screen').classList.remove('hidden');
         }
 
-        document.getElementById('retry-btn').onclick = () => {
-            gameOverScreen.classList.add('hidden');
-            if(activeGame === 'wave') startWave(waveLvl);
-            else if(activeGame === 'math') startMath(mathConfig);
-        };
-        document.getElementById('quit-btn').onclick = () => {
-            gameOverScreen.classList.add('hidden');
-            backBtn.click();
-        };
+        // --- MATH DASH ---
+        let mathEnergy = 100, mathAns = 0;
+        function startMath() { isPlaying = true; score = 0; mathEnergy = 100; genMath(); document.getElementById('math-input').focus(); }
+        function genMath() { let n1 = Math.floor(Math.random()*20), n2 = Math.floor(Math.random()*20); mathAns = n1 + n2; document.getElementById('math-problem').innerText = `${n1} + ${n2}`; }
+        document.getElementById('math-input').oninput = (e) => { if(parseInt(e.target.value) === mathAns) { score++; mathEnergy = Math.min(100, mathEnergy + 15); e.target.value = ''; genMath(); MusicEngine.triggerNote(800, 0.1, 0.1); } };
 
-        // --- MATH DASH ENGINE ---
-        let mathEnergy = 100, mathAns = 0, mathConfig = { op: '+', diff: 'easy' };
-        document.querySelectorAll('#math-op-btns .btn-ui').forEach(btn => {
-            btn.onclick = () => { document.querySelectorAll('#math-op-btns .btn-ui').forEach(b => b.classList.remove('active')); btn.classList.add('active'); mathConfig.op = btn.dataset.op; }
-        });
-        document.querySelectorAll('#math-diff-btns .btn-ui').forEach(btn => {
-            btn.onclick = () => { document.querySelectorAll('#math-diff-btns .btn-ui').forEach(b => b.classList.remove('active')); btn.classList.add('active'); mathConfig.diff = btn.dataset.diff; }
-        });
-        document.getElementById('start-math-btn').onclick = () => switchGame('math', mathConfig);
-
-        function startMath(config) {
-            mathConfig = config; mathEnergy = 100; isPlaying = true; score = 0;
-            genMath(); const input = document.getElementById('math-input'); input.value = '';
-            setTimeout(() => input.focus(), 100);
-        }
-        function genMath() {
-            let n1, n2, symbol; const diff = mathConfig.diff; const op = mathConfig.op;
-            let range = diff === 'medium' ? 25 : (diff === 'hard' ? 100 : (diff === 'insane' ? 500 : 10));
-            if (op === '+') { n1 = Math.floor(Math.random() * range); n2 = Math.floor(Math.random() * range); mathAns = n1 + n2; symbol = '+'; } 
-            else if (op === '-') { n1 = Math.floor(Math.random() * range) + (range/2); n2 = Math.floor(Math.random() * n1); mathAns = n1 - n2; symbol = '-'; } 
-            else if (op === '*') { let mRange = diff === 'easy' ? 10 : (diff === 'medium' ? 15 : (diff === 'hard' ? 25 : 50)); n1 = Math.floor(Math.random() * mRange); n2 = Math.floor(Math.random() * (diff === 'easy' ? 10 : 12)); mathAns = n1 * n2; symbol = '×'; }
-            document.getElementById('math-problem').innerText = `${n1} ${symbol} ${n2}`;
-        }
-        document.getElementById('math-input').oninput = (e) => {
-            if(parseInt(e.target.value) === mathAns) {
-                score++;
-                let gain = mathConfig.diff === 'hard' ? 10 : (mathConfig.diff === 'insane' ? 8 : 15);
-                mathEnergy = Math.min(100, mathEnergy + gain);
-                e.target.value = ''; genMath(); MusicEngine.triggerNote(800, 0.1, 0.1);
-            }
-        };
-
-        // --- COOKIE CRUNCH LOGIC ---
-        let cookies = 0; let clickPower = 1; let cps = 0;
-        const shopItems = [
-            { id: 'c1', name: 'Finger', type: 'click', cost: 15, power: 1, owned: 0, icon: '👆' },
-            { id: 'c2', name: 'Tapper', type: 'click', cost: 500, power: 10, owned: 0, icon: '⚡' },
-            { id: 'a1', name: 'Cursor', type: 'auto', cost: 100, cps: 1, owned: 0, icon: '🖱️' },
-            { id: 'a2', name: 'Grandma', type: 'auto', cost: 500, cps: 5, owned: 0, icon: '👵' },
-            { id: 'a3', name: 'Farm', type: 'auto', cost: 2500, cps: 18, owned: 0, icon: '🚜' },
-            { id: 'a4', name: 'Factory', type: 'auto', cost: 10000, cps: 55, owned: 0, icon: '🏭' }
-        ];
-
-        function startClicker() { loadGame(); isPlaying = true; updateClickerUI(); }
-        document.getElementById('big-cookie').onclick = (e) => { cookies += clickPower; spawnFloatingText(e.clientX, e.clientY, `+${clickPower}`); updateClickerUI(); MusicEngine.triggerNote(400, 0.05, 0.05); };
-        function spawnFloatingText(x, y, text) { const el = document.createElement('div'); el.className = 'floating-text'; el.innerText = text; el.style.left = `${x}px`; el.style.top = `${y}px`; document.querySelector('.clicker-main').appendChild(el); setTimeout(() => el.remove(), 800); }
-        function updateClickerUI() { document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString(); document.getElementById('cps-val').innerText = cps.toLocaleString(); document.getElementById('cpc-val').innerText = clickPower.toLocaleString(); renderShop(); }
-        function renderShop() {
-            const container = document.getElementById('shop-container'); container.innerHTML = '';
-            shopItems.forEach(item => {
-                const d = document.createElement('div'); d.className = `shop-item ${cookies >= item.cost ? 'affordable' : 'locked'}`;
-                d.innerHTML = `<div style="display:flex;align-items:center;"><span class="item-icon">${item.icon}</span><div class="item-details"><span class="item-name">${item.name}</span><span class="item-cost">${Math.floor(item.cost)}</span></div><div class="item-owned">${item.owned}</div></div>`;
-                d.onclick = () => { if(cookies >= item.cost) { cookies -= item.cost; item.owned++; if(item.type==='click') clickPower+=item.power; else cps+=item.cps; item.cost *= 1.15; updateClickerUI(); saveGame(); }};
-                container.appendChild(d);
-            });
-        }
-        function saveGame() { localStorage.setItem('cookieSave', JSON.stringify({cookies, clickPower, cps, items: shopItems.map(i=>({id:i.id, owned:i.owned, cost:i.cost}))})); }
-        function loadGame() { const s = localStorage.getItem('cookieSave'); if(s){ const d = JSON.parse(s); cookies=d.cookies; clickPower=d.clickPower; cps=d.cps; d.items.forEach(si=>{const i=shopItems.find(x=>x.id===si.id); if(i){i.owned=si.owned; i.cost=si.cost;}});}}
+        // --- CLICKER ---
+        let cookies = 0;
+        function startClicker() { isPlaying = true; updateClickerUI(); }
+        document.getElementById('big-cookie').onclick = (e) => { cookies++; updateClickerUI(); MusicEngine.triggerNote(400, 0.05, 0.05); };
+        function updateClickerUI() { document.getElementById('cookie-count').innerText = Math.floor(cookies); }
 
         // --- NAVIGATION ---
+        const mainMenu = document.getElementById('main-menu');
+        const backBtn = document.getElementById('back-to-menu');
         document.getElementById('card-wave').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('wave-level-select').classList.remove('hidden'); backBtn.style.display='block'; renderWaveLevels(); };
-        document.getElementById('card-math').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('math-select-screen').classList.remove('hidden'); backBtn.style.display='block'; };
+        document.getElementById('card-math').onclick = () => switchGame('math');
         document.getElementById('card-clicker').onclick = () => switchGame('clicker');
         document.getElementById('close-level-select').onclick = () => { document.getElementById('wave-level-select').classList.add('hidden'); mainMenu.classList.remove('hidden'); backBtn.style.display='none'; };
-        backBtn.onclick = () => { if(activeGame==='clicker') saveGame(); activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen').forEach(el=>el.classList.add('hidden')); };
+        backBtn.onclick = () => { activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen').forEach(el=>el.classList.add('hidden')); };
 
         function switchGame(mode, data) {
             activeGame = mode; mainMenu.classList.add('hidden'); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`${mode}-ui`).classList.remove('hidden'); backBtn.style.display = 'block';
-            if(mode === 'wave') startWave(data); if(mode === 'math') startMath(data); if(mode === 'clicker') startClicker();
+            if(mode === 'wave') startWave(data); if(mode === 'math') startMath(); if(mode === 'clicker') startClicker();
         }
+
+        document.getElementById('retry-btn').onclick = () => { document.getElementById('game-over-screen').classList.add('hidden'); if(activeGame==='wave') startWave(waveLvl); else startMath(); };
+        document.getElementById('quit-btn').onclick = backBtn.onclick;
 
         // --- MAIN LOOP ---
         function loop() {
             if (isPlaying) {
                 if (activeGame === 'wave') {
-                    player.x += waveLvl.speed; player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
-                    player.trail.push({x: player.x, y: player.y}); if(player.trail.length > 20) player.trail.shift();
+                    player.x += waveLvl.speed; 
+                    player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
+                    player.trail.push({x: player.x, y: player.y}); if(player.trail.length > 30) player.trail.shift();
                     if(player.y < 0 || player.y > canvas.height) triggerGameOver(score);
-                    walls.forEach(w => { if(player.x+10 > w.x && player.x-10 < w.x+w.w && (player.y-10 < w.top || player.y+10 > w.bottom)) triggerGameOver(score); });
+                    walls.forEach(w => { 
+                        if(player.x+10 > w.x && player.x-10 < w.x+w.w && (player.y-10 < w.top || player.y+10 > w.bottom)) triggerGameOver(score); 
+                    });
                     if(player.x > walls[0].x + 400) { walls.shift(); spawnWall(walls[walls.length-1].x+600); score++; document.getElementById('wave-score-container').innerText = score; }
                 }
-                if (activeGame === 'math') {
-                    let d = mathConfig.diff === 'medium' ? 0.2 : (mathConfig.diff === 'hard' ? 0.25 : (mathConfig.diff === 'insane' ? 0.35 : 0.15));
-                    mathEnergy -= d; if (mathEnergy <= 0) triggerGameOver(score, "TIME EXPIRED");
-                }
-                if (activeGame === 'clicker') { cookies += cps / 60; document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString(); }
+                if (activeGame === 'math') { mathEnergy -= 0.15; if (mathEnergy <= 0) triggerGameOver(score, "TIME OUT"); }
             }
             ctx.clearRect(0,0,canvas.width, canvas.height);
-            if (activeGame === 'wave' && (isPlaying || !gameOverScreen.classList.contains('hidden'))) {
-                ctx.save(); ctx.translate(-player.x + 200, 0); ctx.fillStyle = waveLvl.color;
-                walls.forEach(w => { ctx.fillRect(w.x, 0, w.w, w.top); ctx.fillRect(w.x, w.bottom, w.w, canvas.height); });
-                ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.beginPath(); player.trail.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke();
+            if (activeGame === 'wave' && (isPlaying || !document.getElementById('game-over-screen').classList.contains('hidden'))) {
+                ctx.save();
+                // "SEE AHEAD" VIEW: Camera is slightly further back, showing more of the right side
+                ctx.translate(-player.x + 250, 0); 
+                
+                // Draw Walls (with glow)
+                ctx.shadowBlur = 15; ctx.shadowColor = waveLvl.color;
+                ctx.fillStyle = waveLvl.color;
+                walls.forEach(w => { 
+                    ctx.fillRect(w.x, 0, w.w, w.top); 
+                    ctx.fillRect(w.x, w.bottom, w.w, canvas.height); 
+                });
+                
+                // Draw Trail
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.beginPath(); 
+                player.trail.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); 
+                ctx.stroke();
+                
+                // Draw Player
+                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(player.x, player.y, 8, 0, Math.PI*2); ctx.fill();
                 ctx.restore();
             }
             if (activeGame === 'math' && isPlaying) {
@@ -762,19 +545,11 @@
             requestAnimationFrame(loop);
         }
 
-        // --- EVENTS ---
         window.onkeydown = (e) => keys[e.key] = true; window.onkeyup = (e) => keys[e.key] = false;
-        window.ontouchstart = (e) => { if(!e.target.closest('.btn-ui, #math-input, #big-cookie, .shop-item, #music-panel')) keys['touchstart'] = true; };
+        window.ontouchstart = (e) => { if(!e.target.closest('.btn-ui, #math-input, #big-cookie')) keys['touchstart'] = true; };
         window.ontouchend = () => keys['touchstart'] = false;
-        
-        const musicBtn = document.getElementById('music-menu-btn');
-        const musicPanel = document.getElementById('music-panel');
-        musicBtn.onclick = (e) => { e.stopPropagation(); musicPanel.style.display = musicPanel.style.display === 'block' ? 'none' : 'block'; };
-        document.querySelectorAll('.music-item').forEach(i => i.onclick = () => { document.querySelectorAll('.music-item').forEach(x=>x.classList.remove('playing')); i.classList.add('playing'); MusicEngine.playProceduralTrack(i.dataset.track); });
-        document.getElementById('volume-slider').oninput = (e) => MusicEngine.setVolume(e.target.value);
-        window.onclick = () => musicPanel.style.display = 'none';
-        musicPanel.onclick = (e) => e.stopPropagation();
-
+        document.getElementById('music-menu-btn').onclick = () => { const p = document.getElementById('music-panel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; };
+        document.querySelectorAll('.music-item').forEach(i => i.onclick = () => MusicEngine.playProceduralTrack(i.dataset.track));
         loop();
     </script>
 </body>
