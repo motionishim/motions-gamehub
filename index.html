@@ -229,7 +229,6 @@
             z-index: 500;
         }
         .clicker-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; position: relative; }
-        .clicker-shop { width: 380px; padding: 30px; background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border-left: 1px solid var(--glass-border); overflow-y: auto; }
         
         #big-cookie { 
             width: 240px; height: 240px; 
@@ -255,35 +254,6 @@
             backdrop-filter: blur(10px);
         }
 
-        .floating-text {
-            position: absolute;
-            color: var(--neon-orange);
-            font-weight: 900;
-            pointer-events: none;
-            animation: float-up 0.8s ease-out forwards;
-            z-index: 600;
-            text-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
-        }
-
-        @keyframes float-up {
-            0% { transform: translateY(0); opacity: 1; font-size: 1.2rem; }
-            100% { transform: translateY(-120px); opacity: 0; font-size: 1.8rem; }
-        }
-
-        .shop-item {
-            padding: 18px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-        }
-        .shop-item:hover:not(.locked) { background: rgba(255,255,255,0.08); border-color: var(--neon-blue); }
-        .shop-item.locked { opacity: 0.4; cursor: not-allowed; }
-
         /* Standard Game UIs */
         .screen {
             position: fixed;
@@ -307,6 +277,57 @@
         
         #game-over-screen { z-index: 2500; }
         .score-text { font-size: 4rem; font-weight: 900; margin: 20px 0; color: var(--neon-blue); }
+
+        /* Customizer UI */
+        .customizer-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .custom-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.5;
+            margin-bottom: 12px;
+        }
+        .option-row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: black;
+            font-weight: bold;
+        }
+        .color-dot:hover { transform: scale(1.2); }
+        .color-dot.active { border-color: white; transform: scale(1.1); box-shadow: 0 0 10px currentColor; }
+        
+        .trail-option {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: 0.2s;
+        }
+        .trail-option.active {
+            background: white;
+            color: black;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -361,6 +382,30 @@
             <div class="page-dots" id="page-dots"></div>
             <button class="btn-ui" id="next-page">→</button>
         </div>
+
+        <!-- Style Customizer -->
+        <div class="customizer-section">
+            <div class="custom-label">Trail Type</div>
+            <div class="option-row" id="trail-selector">
+                <div class="trail-option active" data-trail="classic">SOLID</div>
+                <div class="trail-option" data-trail="pulse">PULSE</div>
+                <div class="trail-option" data-trail="ghost">GLOW</div>
+            </div>
+        </div>
+
+        <div class="customizer-section">
+            <div class="custom-label">Trail Color</div>
+            <div class="option-row" id="color-selector">
+                <div class="color-dot active" data-color="rainbow" style="background: linear-gradient(45deg, red, orange, yellow, green, blue, purple);">🌈</div>
+                <div class="color-dot" data-color="#ff4d4d" style="background: #ff4d4d;"></div>
+                <div class="color-dot" data-color="#ffaa00" style="background: #ffaa00;"></div>
+                <div class="color-dot" data-color="#ffff4d" style="background: #ffff4d;"></div>
+                <div class="color-dot" data-color="#00ff88" style="background: #00ff88;"></div>
+                <div class="color-dot" data-color="#00f2ff" style="background: #00f2ff;"></div>
+                <div class="color-dot" data-color="#bc13fe" style="background: #bc13fe;"></div>
+            </div>
+        </div>
+
         <button class="btn-ui" id="close-level-select" style="width: 100%; margin-top: 20px;">Back</button>
     </div>
 
@@ -394,7 +439,6 @@
             </div>
             <div id="big-cookie">🍪</div>
         </div>
-        <div class="clicker-shop" id="shop-container"></div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -426,6 +470,9 @@
         // --- NEON WAVE ENGINE ---
         let score = 0, player = { x: 0, y: 0, trail: [] }, walls = [], waveLvl = null;
         let currentPage = 0;
+        let currentTrailType = 'classic';
+        let currentTrailColor = 'rainbow';
+
         const WAVE_LEVELS = Array.from({length: 10}, (_, i) => ({
             id: i + 1, speed: 5 + (i * 0.5), gap: 380 - (i * 18), 
             color: ['#00f2ff', '#00ff88', '#ff007f', '#bc13fe', '#ffaa00', '#ffffff', '#ff4d4d', '#4d79ff', '#ffff4d', '#9d00ff'][i],
@@ -446,6 +493,22 @@
             });
         }
 
+        document.getElementById('trail-selector').onclick = (e) => {
+            const opt = e.target.closest('.trail-option');
+            if(!opt) return;
+            document.querySelectorAll('.trail-option').forEach(el => el.classList.remove('active'));
+            opt.classList.add('active');
+            currentTrailType = opt.dataset.trail;
+        };
+
+        document.getElementById('color-selector').onclick = (e) => {
+            const opt = e.target.closest('.color-dot');
+            if(!opt) return;
+            document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('active'));
+            opt.classList.add('active');
+            currentTrailColor = opt.dataset.color;
+        };
+
         document.getElementById('prev-page').onclick = () => { if(currentPage > 0) { currentPage--; renderWaveLevels(); }};
         document.getElementById('next-page').onclick = () => { if(currentPage < 2) { currentPage++; renderWaveLevels(); }};
 
@@ -453,7 +516,6 @@
             waveLvl = l; isPlaying = true; score = 0; 
             player = {x: 200, y: canvas.height/2, trail: []}; 
             walls = []; 
-            // PRE-GENERATE walls so we can see them ahead
             for(let i=0; i<15; i++) { spawnWall(800 + (i * 600)); }
             document.getElementById('wave-score-container').innerText = '0';
         }
@@ -505,7 +567,11 @@
                 if (activeGame === 'wave') {
                     player.x += waveLvl.speed; 
                     player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
-                    player.trail.push({x: player.x, y: player.y}); if(player.trail.length > 30) player.trail.shift();
+                    
+                    let c = currentTrailColor === 'rainbow' ? `hsl(${(player.x / 5) % 360}, 100%, 60%)` : currentTrailColor;
+                    player.trail.push({x: player.x, y: player.y, color: c}); 
+                    if(player.trail.length > 60) player.trail.shift();
+
                     if(player.y < 0 || player.y > canvas.height) triggerGameOver(score);
                     walls.forEach(w => { 
                         if(player.x+10 > w.x && player.x-10 < w.x+w.w && (player.y-10 < w.top || player.y+10 > w.bottom)) triggerGameOver(score); 
@@ -515,12 +581,12 @@
                 if (activeGame === 'math') { mathEnergy -= 0.15; if (mathEnergy <= 0) triggerGameOver(score, "TIME OUT"); }
             }
             ctx.clearRect(0,0,canvas.width, canvas.height);
+            
             if (activeGame === 'wave' && (isPlaying || !document.getElementById('game-over-screen').classList.contains('hidden'))) {
                 ctx.save();
-                // "SEE AHEAD" VIEW: Camera is slightly further back, showing more of the right side
                 ctx.translate(-player.x + 250, 0); 
                 
-                // Draw Walls (with glow)
+                // Draw Walls
                 ctx.shadowBlur = 15; ctx.shadowColor = waveLvl.color;
                 ctx.fillStyle = waveLvl.color;
                 walls.forEach(w => { 
@@ -528,16 +594,54 @@
                     ctx.fillRect(w.x, w.bottom, w.w, canvas.height); 
                 });
                 
-                // Draw Trail
                 ctx.shadowBlur = 0;
-                ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.beginPath(); 
-                player.trail.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); 
-                ctx.stroke();
+                if(currentTrailType === 'classic') {
+                    ctx.lineWidth = 6;
+                    ctx.lineCap = 'round';
+                    for(let i = 1; i < player.trail.length; i++) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = player.trail[i].color;
+                        ctx.moveTo(player.trail[i-1].x, player.trail[i-1].y);
+                        ctx.lineTo(player.trail[i].x, player.trail[i].y);
+                        ctx.stroke();
+                    }
+                } 
+                else if(currentTrailType === 'pulse') {
+                    player.trail.forEach((p, i) => {
+                        let opacity = i / player.trail.length;
+                        let size = (i / player.trail.length) * 12;
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = opacity * 0.6;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    ctx.globalAlpha = 1.0;
+                }
+                else if(currentTrailType === 'ghost') {
+                    ctx.lineWidth = 14;
+                    ctx.lineJoin = 'round';
+                    for(let i = 1; i < player.trail.length; i++) {
+                        ctx.beginPath();
+                        ctx.globalAlpha = (i / player.trail.length) * 0.5;
+                        ctx.strokeStyle = player.trail[i].color;
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = player.trail[i].color;
+                        ctx.moveTo(player.trail[i-1].x, player.trail[i-1].y);
+                        ctx.lineTo(player.trail[i].x, player.trail[i].y);
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1.0;
+                    ctx.shadowBlur = 0;
+                }
                 
                 // Draw Player
-                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(player.x, player.y, 8, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'white'; 
+                ctx.shadowBlur = 15; ctx.shadowColor = 'white';
+                ctx.beginPath(); ctx.arc(player.x, player.y, 8, 0, Math.PI*2); ctx.fill();
                 ctx.restore();
             }
+            
             if (activeGame === 'math' && isPlaying) {
                 ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(canvas.width/2 - 100, 50, 200, 10);
                 ctx.fillStyle = '#ff007f'; ctx.fillRect(canvas.width/2 - 100, 50, (mathEnergy/100)*200, 10);
@@ -546,7 +650,7 @@
         }
 
         window.onkeydown = (e) => keys[e.key] = true; window.onkeyup = (e) => keys[e.key] = false;
-        window.ontouchstart = (e) => { if(!e.target.closest('.btn-ui, #math-input, #big-cookie')) keys['touchstart'] = true; };
+        window.ontouchstart = (e) => { if(!e.target.closest('.btn-ui, #math-input, #big-cookie, .trail-option, .color-dot')) keys['touchstart'] = true; };
         window.ontouchend = () => keys['touchstart'] = false;
         document.getElementById('music-menu-btn').onclick = () => { const p = document.getElementById('music-panel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; };
         document.querySelectorAll('.music-item').forEach(i => i.onclick = () => MusicEngine.playProceduralTrack(i.dataset.track));
