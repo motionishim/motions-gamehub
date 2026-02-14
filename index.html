@@ -201,7 +201,6 @@
             min-height: 200px;
         }
 
-        /* Trail Color Picker */
         .trail-selector {
             margin-bottom: 25px;
             padding: 15px;
@@ -300,6 +299,35 @@
         @keyframes float-up {
             0% { transform: translateY(0); opacity: 1; }
             100% { transform: translateY(-100px); opacity: 0; }
+        }
+
+        .shop-item {
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .shop-item:hover { background: rgba(255,255,255,0.1); border-color: var(--neon-blue); }
+        .shop-item.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+        .shop-item.affordable { border-left: 4px solid var(--neon-green); }
+
+        .buy-badge {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--neon-green);
+            color: black;
+            font-size: 0.6rem;
+            font-weight: 900;
+            padding: 4px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
         }
 
         @media (max-width: 768px) {
@@ -470,15 +498,6 @@
         };
         document.getElementById('audio-toggle').onclick = () => AudioEngine.toggleMute();
 
-        // --- TRAIL COLOR PICKER ---
-        document.querySelectorAll('.color-dot').forEach(dot => {
-            dot.onclick = () => {
-                document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-                dot.classList.add('active');
-                selectedTrailColor = dot.getAttribute('data-color');
-            };
-        });
-
         // --- NAVIGATION ---
         document.getElementById('card-wave').onclick = () => {
             mainMenu.classList.add('hidden');
@@ -527,13 +546,12 @@
             { id: 10, speed: 10, gap: 250, color: '#ffffff' }
         ];
 
-        const LEVELS_PER_PAGE = 4;
-
         function renderWaveLevels(pageIndex) {
             const container = document.getElementById('level-grid-container');
             const dots = document.getElementById('pagination-dots');
             container.innerHTML = '';
             dots.innerHTML = '';
+            const LEVELS_PER_PAGE = 4;
             const start = pageIndex * LEVELS_PER_PAGE;
             const end = Math.min(start + LEVELS_PER_PAGE, WAVE_LEVELS.length);
             const totalPages = Math.ceil(WAVE_LEVELS.length / LEVELS_PER_PAGE);
@@ -612,17 +630,22 @@
             const shop = document.getElementById('shop-container');
             shop.innerHTML = '';
             items.forEach((item) => {
-                const btn = document.createElement('div');
-                btn.style.padding = '15px';
-                btn.style.background = cookies >= item.cost ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.02)';
-                btn.style.border = '1px solid rgba(255,255,255,0.1)';
-                btn.style.borderRadius = '12px';
-                btn.style.marginBottom = '10px';
-                btn.style.cursor = cookies >= item.cost ? 'pointer' : 'not-allowed';
-                btn.style.opacity = cookies >= item.cost ? '1' : '0.5';
-                btn.innerHTML = `<div style="display:flex; justify-content:space-between"><b>${item.name}</b> <span>${item.owned}</span></div>
-                                 <div style="font-size:0.7rem; color:var(--neon-green)">Cost: ${Math.floor(item.cost)} | +${item.cps} CPS</div>`;
-                btn.onclick = () => { 
+                const canAfford = cookies >= item.cost;
+                const div = document.createElement('div');
+                div.className = `shop-item ${canAfford ? 'affordable' : 'locked'}`;
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+                        <b style="color: white">${item.name}</b> 
+                        <span style="color: var(--neon-blue); font-weight: 800">${item.owned}</span>
+                    </div>
+                    <div style="font-size:0.7rem; color:var(--neon-green)">
+                        Cost: ${Math.floor(item.cost).toLocaleString()} | +${item.cps} CPS
+                    </div>
+                    ${canAfford ? '<div class="buy-badge">Buy</div>' : ''}
+                `;
+                
+                // Purchase logic on click
+                div.onclick = () => { 
                     if(cookies >= item.cost) { 
                         cookies -= item.cost; 
                         item.owned++; 
@@ -632,7 +655,7 @@
                         updateClickerUI(); 
                     }
                 };
-                shop.appendChild(btn);
+                shop.appendChild(div);
             });
         }
 
@@ -656,9 +679,15 @@
                 }
                 if (activeGame === 'math') { mathEnergy -= 0.15; if(mathEnergy <= 0) { isPlaying = false; document.getElementById('math-over').classList.remove('hidden'); }}
                 if (activeGame === 'clicker') { 
-                    // Auto-Clicker logic: CPS added every frame
                     cookies += cps / 60; 
-                    updateClickerUI(); 
+                    // No need to call updateClickerUI() every frame to save performance, 
+                    // but we need it to update the displayed count and shop "affordability"
+                    document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
+                    
+                    // Periodically update the shop state so badges appear when you hit the cost threshold
+                    if (Math.floor(cookies * 60) % 30 === 0) {
+                        renderShop();
+                    }
                 }
             }
 
