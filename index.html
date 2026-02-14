@@ -473,6 +473,24 @@
         </div>
     </div>
 
+    <!-- Bike Garage -->
+    <div id="bike-select-screen" class="screen hidden">
+        <h2 style="color: var(--neon-yellow); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Select Your Ride</h2>
+        <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
+            <div class="game-card bike" id="btn-surron" style="width: 180px;">
+                <div style="font-size: 3rem;">⚡</div>
+                <h3>SURRON</h3>
+                <p>Electric. Light. Snappy wheelies.</p>
+            </div>
+            <div class="game-card bike" id="btn-dirtbike" style="width: 180px; border-color: #ff4d4d;">
+                <div style="font-size: 3rem;">💨</div>
+                <h3>DIRT BIKE</h3>
+                <p>Gas. Heavy. Top speed.</p>
+            </div>
+        </div>
+        <button class="btn-ui" id="close-bike-select" style="width: 100%; margin-top: 30px;">Back to Hub</button>
+    </div>
+
     <!-- Wave Level Select -->
     <div id="wave-level-select" class="screen hidden">
         <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Select Level</h2>
@@ -565,6 +583,16 @@
             <div class="stat-card">
                 <div id="cookie-count" style="font-size: 3rem; color: var(--neon-orange); font-weight: 900;">0</div>
                 <div style="font-size: 0.8rem; opacity: 0.6;">COOKIES</div>
+                <div style="display: flex; justify-content: space-around; margin-top: 15px; border-top: 1px solid var(--glass-border); padding-top: 10px;">
+                    <div>
+                        <div style="font-size: 0.6rem; opacity: 0.5;">PER SEC</div>
+                        <div id="cps-val" style="color: var(--neon-green); font-weight: 800;">0</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.6rem; opacity: 0.5;">PER CLICK</div>
+                        <div id="cpc-val" style="color: var(--neon-blue); font-weight: 800;">1</div>
+                    </div>
+                </div>
             </div>
             <div id="big-cookie">🍪</div>
         </div>
@@ -643,121 +671,152 @@
         window.addEventListener('resize', resize); resize();
 
         // --- SURRON BIKE GAME ---
-        let bike = { x: 100, y: 0, dy: 0, angle: 0, wheelie: 0 };
+        let bike = { x: 100, y: 0, dy: 0, angle: 0, wheelie: 0, type: 'surron' };
         let bikeScore = 0;
         let bikeDistance = 0;
         let cityBuildings = [];
+        let skyline = [];
 
         function startBike() {
-            bike = { x: 200, y: canvas.height - 150, dy: 0, angle: 0, wheelie: 0 };
+            bike = { x: 200, y: canvas.height - 150, dy: 0, angle: 0, wheelie: 0, type: selectedBikeType };
             bikeScore = 0;
             bikeDistance = 0;
             cityBuildings = [];
-            // Generate initial city
+            skyline = [];
+            
+            // Generate Skyline (Background)
+            for(let i=0; i<15; i++) {
+                skyline.push({ x: i * 150, w: 100 + Math.random()*50, h: 200 + Math.random()*200 });
+            }
+
+            // Generate City (Foreground)
             for(let i=0; i<20; i++) {
-                cityBuildings.push({ x: i * 100, w: 60 + Math.random()*40, h: 100 + Math.random()*300 });
+                createBuilding(i * 300);
             }
             document.getElementById('wheelie-meter').classList.remove('hidden');
             isPlaying = true;
         }
 
+        function createBuilding(x) {
+            let h = 150 + Math.random() * 200;
+            let w = 150 + Math.random() * 100;
+            // Generate Windows
+            let windows = [];
+            for(let wx=10; wx<w-20; wx+=30) {
+                for(let wy=10; wy<h-20; wy+=40) {
+                    if(Math.random() > 0.3) windows.push({x: wx, y: wy});
+                }
+            }
+            cityBuildings.push({ x, w, h, windows });
+        }
+
         function updateBike() {
-            // Basic Physics
-            let speed = 8;
+            let speed = bike.type === 'surron' ? 10 : 12; // Dirt bike is faster
+            let wheelieSpeed = bike.type === 'surron' ? 0.15 : 0.08; // Surron pops up faster
+            
             bikeDistance += speed/10;
             
-            // Wheelie Logic
             let targetAngle = 0;
             if (keys['Shift']) {
-                targetAngle = -0.6; // Pull back
+                targetAngle = -0.7; // Sweet spot
             } else {
-                targetAngle = 0; // Drop down
+                targetAngle = 0;
             }
             
-            // Smooth rotation
-            bike.angle += (targetAngle - bike.angle) * 0.1;
+            bike.angle += (targetAngle - bike.angle) * wheelieSpeed;
             
-            // Crash Logic (Too far back)
-            if (bike.angle < -1.2) {
+            // CRASH LOGIC: Past 115 degrees approx -2.0 radians. Let's make it -1.6 (just past 90)
+            if (bike.angle < -1.6) {
                 triggerGameOver(Math.floor(bikeScore), "LOOPED OUT!");
             }
 
             // Scoring
-            if (bike.angle < -0.4) {
-                bikeScore += 2; // Wheelie bonus
-                document.getElementById('wheelie-bar').style.width = `${Math.min(100, Math.abs(bike.angle)*100)}%`;
-                document.getElementById('wheelie-bar').style.background = '#faff00';
+            if (bike.angle < -0.4 && bike.angle > -1.5) {
+                bikeScore += 2;
+                document.getElementById('wheelie-bar').style.width = `${Math.min(100, (Math.abs(bike.angle)-0.4)*100)}%`;
             } else {
-                bikeScore += 0.5; // Normal driving
+                bikeScore += 0.5;
                 document.getElementById('wheelie-bar').style.width = '0%';
             }
 
-            // City Scroll
-            cityBuildings.forEach(b => b.x -= speed);
-            if (cityBuildings[0].x < -100) {
-                cityBuildings.shift();
-                let lastX = cityBuildings[cityBuildings.length-1].x;
-                cityBuildings.push({ x: lastX + 100, w: 60 + Math.random()*40, h: 100 + Math.random()*300 });
+            // Scroll Skyline (Slow)
+            skyline.forEach(b => b.x -= speed * 0.2);
+            if (skyline[0].x < -200) {
+                skyline.shift();
+                skyline.push({ x: skyline[skyline.length-1].x + 150, w: 100 + Math.random()*50, h: 200 + Math.random()*200 });
             }
 
-            // Update UI
+            // Scroll City (Fast)
+            cityBuildings.forEach(b => b.x -= speed);
+            if (cityBuildings[0].x < -300) {
+                cityBuildings.shift();
+                createBuilding(cityBuildings[cityBuildings.length-1].x + 300);
+            }
+
             document.getElementById('bike-dist').innerText = `${Math.floor(bikeDistance)} m`;
             document.getElementById('bike-score').innerText = `${Math.floor(bikeScore)} pts`;
         }
 
         function drawBikeGame() {
-            // Draw City Background
-            ctx.fillStyle = '#050510';
+            ctx.fillStyle = '#020205';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw Buildings (Parallax)
-            ctx.fillStyle = 'rgba(0, 242, 255, 0.1)';
+            // Skyline
+            ctx.fillStyle = '#101030';
+            skyline.forEach(b => ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h));
+
+            // Buildings
             cityBuildings.forEach(b => {
+                ctx.fillStyle = '#050510';
                 ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h);
+                ctx.strokeStyle = '#222';
+                ctx.strokeRect(b.x, canvas.height - b.h, b.w, b.h);
+                
+                // Windows
+                ctx.fillStyle = 'rgba(255, 255, 100, 0.1)';
+                b.windows.forEach(w => {
+                    ctx.fillRect(b.x + w.x, canvas.height - b.h + w.y, 15, 25);
+                });
             });
 
-            // Draw Ground
+            // Ground
             ctx.fillStyle = '#111';
             ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
-            ctx.strokeStyle = '#faff00';
-            ctx.lineWidth = 2;
+            
+            // Moving Road Lines
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([40, 40]);
+            ctx.lineDashOffset = -bikeDistance * 10;
             ctx.beginPath();
-            ctx.moveTo(0, canvas.height - 100);
-            ctx.lineTo(canvas.width, canvas.height - 100);
+            ctx.moveTo(0, canvas.height - 40);
+            ctx.lineTo(canvas.width, canvas.height - 40);
             ctx.stroke();
+            ctx.setLineDash([]);
 
-            // Draw Surron Bike (Vector Style)
+            // Draw Bike
             ctx.save();
-            ctx.translate(bike.x, canvas.height - 100); // Pivot at back wheel
-            ctx.rotate(bike.angle); // Rotate based on wheelie
+            ctx.translate(bike.x, canvas.height - 100);
+            ctx.rotate(bike.angle);
 
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 3;
+            ctx.strokeStyle = bike.type === 'surron' ? '#00f2ff' : '#ff4d4d';
+            ctx.lineWidth = 4;
             
             // Wheels
-            ctx.beginPath(); ctx.arc(0, -15, 15, 0, Math.PI*2); ctx.stroke(); // Back Wheel (at 0,0 relative)
-            ctx.beginPath(); ctx.arc(55, -15, 15, 0, Math.PI*2); ctx.stroke(); // Front Wheel
+            ctx.beginPath(); ctx.arc(0, -18, 18, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(60, -18, 18, 0, Math.PI*2); ctx.stroke();
 
-            // Frame (X shape)
+            // Body
             ctx.beginPath();
-            ctx.moveTo(0, -15);
-            ctx.lineTo(25, -45); // Seat post
-            ctx.lineTo(55, -15); // Fork bottom
-            ctx.moveTo(25, -45);
-            ctx.lineTo(45, -45); // Handlebars
+            ctx.moveTo(0, -18); ctx.lineTo(30, -50); ctx.lineTo(60, -18);
+            ctx.moveTo(30, -50); ctx.lineTo(50, -50);
             ctx.stroke();
 
-            // Rider (Stick figure)
+            // Rider
+            ctx.strokeStyle = 'white';
             ctx.beginPath();
-            ctx.moveTo(25, -45); // Hips
-            ctx.lineTo(25, -70); // Head
-            ctx.moveTo(25, -55); 
-            ctx.lineTo(40, -45); // Arms
-            ctx.stroke();
-
-            // Glow
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#faff00';
+            ctx.moveTo(30, -50); ctx.lineTo(30, -80);
+            ctx.moveTo(30, -70); ctx.lineTo(50, -50);
             ctx.stroke();
 
             ctx.restore();
@@ -921,7 +980,7 @@
         function startClicker() { 
             loadGame(); 
             isPlaying = true; 
-            initShop(); // Create buttons once
+            initShop(); 
             updateClickerUI(); 
         }
         
@@ -946,7 +1005,6 @@
             updateShopState();
         }
 
-        // Initialize shop items only once
         function initShop() {
             const container = document.getElementById('shop-container');
             container.innerHTML = '';
@@ -954,23 +1012,12 @@
                 const div = document.createElement('div');
                 div.className = 'shop-item';
                 div.id = `shop-item-${index}`;
-                div.innerHTML = `
-                    <div style="display:flex;align-items:center;pointer-events:none;">
-                        <span class="item-icon">${item.icon}</span>
-                        <div class="item-details">
-                            <span class="item-name">${item.name}</span>
-                            <span class="item-cost">Cost: ${Math.floor(item.cost).toLocaleString()}</span>
-                            <div style="font-size: 0.6rem; opacity: 0.6; margin-top: 4px;">${item.desc}</div>
-                        </div>
-                        <div class="item-owned">${item.owned}</div>
-                    </div>
-                `;
+                div.innerHTML = `<div style="display:flex;align-items:center;pointer-events:none;"><span class="item-icon">${item.icon}</span><div class="item-details"><span class="item-name">${item.name}</span><span class="item-cost">Cost: ${Math.floor(item.cost).toLocaleString()}</span><div style="font-size: 0.6rem; opacity: 0.6; margin-top: 4px;">${item.desc}</div></div><div class="item-owned">${item.owned}</div></div>`;
                 div.addEventListener('click', () => { buyItem(index); });
                 container.appendChild(div);
             });
         }
 
-        // Update classes and text without recreating DOM
         function updateShopState() {
             shopItems.forEach((item, index) => {
                 const el = document.getElementById(`shop-item-${index}`);
@@ -984,14 +1031,11 @@
         function buyItem(index) {
             const item = shopItems[index];
             if (cookies >= item.cost) {
-                cookies -= item.cost;
-                item.owned++;
-                if (item.type === 'click') clickPower += item.power;
-                else cookiesPerSecond += item.cps;
+                cookies -= item.cost; item.owned++;
+                if (item.type === 'click') clickPower += item.power; else cookiesPerSecond += item.cps;
                 item.cost = Math.ceil(item.cost * 1.15);
                 MusicEngine.triggerNote(600 + (item.owned * 5), 0.1, 0.1);
-                updateClickerUI();
-                saveGame();
+                updateClickerUI(); saveGame();
             }
         }
 
@@ -1029,14 +1073,19 @@
         document.getElementById('card-wave').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('wave-level-select').classList.remove('hidden'); backBtn.style.display='block'; renderWaveLevels(); };
         document.getElementById('card-math').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('math-select-screen').classList.remove('hidden'); backBtn.style.display='block'; };
         document.getElementById('card-clicker').onclick = () => switchGame('clicker');
-        document.getElementById('card-bike').onclick = () => switchGame('bike');
+        document.getElementById('card-bike').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('bike-select-screen').classList.remove('hidden'); backBtn.style.display='block'; };
         document.getElementById('close-level-select').onclick = () => { document.getElementById('wave-level-select').classList.add('hidden'); mainMenu.classList.remove('hidden'); backBtn.style.display='none'; };
+        document.getElementById('close-bike-select').onclick = () => { document.getElementById('bike-select-screen').classList.add('hidden'); mainMenu.classList.remove('hidden'); backBtn.style.display='none'; };
         backBtn.onclick = () => { if(activeGame==='clicker') saveGame(); activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen, #bike-ui, #wheelie-meter').forEach(el=>el.classList.add('hidden')); document.getElementById('math-input').blur(); };
+
+        let selectedBikeType = 'surron';
+        document.getElementById('btn-surron').onclick = () => { selectedBikeType = 'surron'; document.getElementById('bike-select-screen').classList.add('hidden'); switchGame('bike'); };
+        document.getElementById('btn-dirtbike').onclick = () => { selectedBikeType = 'dirt'; document.getElementById('bike-select-screen').classList.add('hidden'); switchGame('bike'); };
 
         function switchGame(mode, data) {
             activeGame = mode; mainMenu.classList.add('hidden'); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`${mode}-ui`).classList.remove('hidden'); backBtn.style.display = 'block';
-            if(mode === 'wave') startWave(data); if(mode === 'math') startMath(data); if(mode === 'clicker') startClicker(); if(mode === 'bike') startBike();
+            if(mode === 'wave') startWave(data); if(mode === 'math') startMath(mathConfig); if(mode === 'clicker') startClicker(); if(mode === 'bike') startBike();
         }
 
         document.getElementById('retry-btn').onclick = () => { 
