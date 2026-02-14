@@ -22,8 +22,6 @@
             font-family: 'Segoe UI', Roboto, sans-serif;
             color: white;
             touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
         }
 
         /* --- NAVIGATION & HUB --- */
@@ -39,32 +37,29 @@
             align-items: center;
             background: radial-gradient(circle at center, #101030 0%, #050510 100%);
             z-index: 1000;
-            overflow-y: auto;
-            padding: 20px 0;
         }
 
         .hub-title {
-            font-size: clamp(2rem, 8vw, 3rem);
+            font-size: 3rem;
             text-transform: uppercase;
-            letter-spacing: 4px;
+            letter-spacing: 8px;
             color: white;
             text-shadow: 0 0 20px var(--neon-blue);
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             text-align: center;
         }
 
         .game-card-container {
             display: flex;
-            gap: 15px;
+            gap: 20px;
             flex-wrap: wrap;
             justify-content: center;
             z-index: 1001;
-            padding: 0 20px;
         }
 
         .game-card {
-            width: 140px;
-            padding: 15px;
+            width: 180px;
+            padding: 20px;
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid var(--neon-blue);
             border-radius: 20px;
@@ -75,57 +70,55 @@
             pointer-events: auto;
         }
 
-        .game-card h2 { font-size: 1.1rem; margin: 10px 0; }
-        .game-card p { font-size: 0.75rem; opacity: 0.8; }
-
-        .game-card:active {
-            transform: scale(0.95);
-            background: rgba(0, 242, 255, 0.2);
+        .game-card:hover {
+            transform: translateY(-10px);
+            background: rgba(0, 242, 255, 0.1);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.3);
         }
 
         .game-card.math { border-color: var(--neon-pink); }
+        .game-card.math:hover { box-shadow: 0 0 30px rgba(255, 0, 127, 0.3); }
+        
         .game-card.clicker { border-color: var(--neon-orange); }
-        .game-card.bike { border-color: var(--neon-green); }
+        .game-card.clicker:hover { box-shadow: 0 0 30px rgba(255, 170, 0, 0.3); }
 
         #back-to-menu {
             position: fixed;
-            top: 15px;
-            left: 15px;
+            top: 20px;
+            left: 20px;
             z-index: 2000;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(255, 255, 255, 0.1);
             border: 1px solid white;
             color: white;
-            padding: 8px 15px;
-            border-radius: 15px;
+            padding: 10px 20px;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             display: none;
-            backdrop-filter: blur(5px);
         }
 
         #audio-toggle {
             position: fixed;
-            top: 15px;
-            right: 15px;
+            top: 20px;
+            right: 20px;
             z-index: 2000;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(255, 255, 255, 0.1);
             border: 1px solid white;
             color: white;
-            padding: 8px 15px;
-            border-radius: 15px;
+            padding: 10px 20px;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 0.8rem;
-            backdrop-filter: blur(5px);
+            font-size: 0.9rem;
         }
 
         .owner-tag {
             position: fixed;
-            bottom: 10px;
-            right: 15px;
+            bottom: 20px;
+            right: 20px;
             z-index: 2000;
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.4);
-            letter-spacing: 1px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
             text-transform: uppercase;
             pointer-events: none;
         }
@@ -133,6 +126,7 @@
         .owner-tag span {
             color: var(--neon-blue);
             font-weight: bold;
+            text-shadow: 0 0 10px var(--neon-blue);
         }
 
         /* --- SHARED UI --- */
@@ -143,20 +137,57 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(5, 5, 20, 0.95);
-            padding: 20px;
+            padding: 30px;
             border-radius: 24px;
             border: 2px solid white;
             backdrop-filter: blur(25px);
             z-index: 1500;
-            width: 90%;
-            max-width: 400px;
+            width: 450px;
             text-align: center;
+            max-width: 90vw;
             box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            max-height: 90vh;
             display: flex;
             flex-direction: column;
         }
+        button.action-btn {
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
+            border: none;
+            padding: 12px 30px;
+            color: white;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-top: 10px;
+            flex-shrink: 0;
+        }
 
-        /* --- CLICKER UI --- */
+        /* --- NEON WAVE SELECTOR ENHANCEMENTS --- */
+        .trail-customizer {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+        }
+        .color-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+        .color-dot:hover { transform: scale(1.2); }
+        .color-dot.active { border-color: white; transform: scale(1.1); box-shadow: 0 0 10px white; }
+
+        /* --- COOKIE CLICKER UI --- */
         #clicker-ui {
             position: fixed;
             top: 0;
@@ -164,7 +195,7 @@
             width: 100%;
             height: 100%;
             display: flex;
-            flex-direction: column; /* Better for mobile */
+            flex-direction: row;
             background: #050515;
             z-index: 500;
         }
@@ -174,118 +205,534 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            border-right: 1px solid rgba(255,255,255,0.1);
             padding: 20px;
         }
         .clicker-shop {
-            height: 40%;
-            padding: 15px;
-            background: rgba(0,0,0,0.6);
+            width: 320px;
+            padding: 20px;
+            background: rgba(0,0,0,0.4);
             overflow-y: auto;
-            border-top: 1px solid rgba(0, 242, 255, 0.2);
+            border-left: 1px solid rgba(0, 242, 255, 0.2);
         }
         #big-cookie {
-            width: 160px;
-            height: 160px;
+            width: 200px;
+            height: 200px;
             background: radial-gradient(circle, #ffaa00 0%, #aa6600 100%);
             border-radius: 50%;
             cursor: pointer;
-            border: 6px solid white;
+            border: 8px solid white;
             box-shadow: 0 0 30px var(--neon-orange);
+            transition: transform 0.05s;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 4rem;
+            font-size: 5rem;
+            user-select: none;
+        }
+        #big-cookie:active { transform: scale(0.92); }
+        .stat-val { font-size: 2.5rem; color: var(--neon-orange); font-weight: bold; margin-bottom: 5px; text-shadow: 0 0 10px rgba(255, 170, 0, 0.5); }
+        .stat-label { color: #888; text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; }
+        
+        .shop-item {
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+        .shop-item:hover:not(.disabled) { background: rgba(255,255,255,0.08); border-color: var(--neon-orange); transform: translateX(-5px); }
+        .shop-item.disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
+        .shop-item h4 { margin: 0; color: var(--neon-orange); font-size: 1rem; }
+        .shop-item p { margin: 5px 0; font-size: 0.75rem; color: #aaa; line-height: 1.2; }
+        .shop-cost { font-weight: bold; color: var(--neon-green); font-size: 0.9rem; margin-top: 5px; }
+        .owned-tag { position: absolute; top: 10px; right: 10px; font-size: 0.7rem; color: var(--neon-blue); font-weight: bold; }
+
+        #save-status {
+            font-size: 0.7rem;
+            color: var(--neon-green);
+            opacity: 0;
+            transition: opacity 0.5s;
+            margin-bottom: 10px;
         }
 
-        /* --- IFRAME CONTAINER --- */
-        #game-iframe-container {
+        /* --- PAGINATED LEVEL SELECTION --- */
+        .level-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+            margin: 20px 0; 
+            flex-grow: 1;
+        }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding: 0 10px;
+        }
+
+        .page-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .level-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 15px; border-radius: 12px; cursor: pointer; text-align: left; transition: 0.2s; }
+        .level-btn:hover { border-color: var(--neon-blue); background: rgba(0, 242, 255, 0.1); }
+
+        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
+
+        #wave-ui, #math-ui {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 400;
-            background: black;
-            display: none;
+            pointer-events: none;
+            z-index: 100;
         }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
+        #math-input { pointer-events: auto; }
     </style>
 </head>
 <body>
 
-    <button id="back-to-menu">BACK</button>
+    <!-- Back Button -->
+    <button id="back-to-menu">BACK TO HUB</button>
     <button id="audio-toggle">SOUND: OFF</button>
     
+    <!-- Owner Signature -->
     <div class="owner-tag">Owner: <span>Matthew</span></div>
 
+    <!-- Main Hub -->
     <div id="main-menu">
         <h1 class="hub-title">MATTHEW'S HUB</h1>
         <div class="game-card-container">
             <div class="game-card" id="card-wave">
                 <h2>NEON WAVE</h2>
-                <p>Pulse through gaps.</p>
+                <p>Avoid walls. Master the gravity pulse.</p>
             </div>
             <div class="game-card math" id="card-math">
                 <h2>MATH DASH</h2>
-                <p>Mental speed test.</p>
+                <p>Solve quickly. Don't drain the energy.</p>
             </div>
             <div class="game-card clicker" id="card-clicker">
                 <h2>COOKIE CRUNCH</h2>
-                <p>Click & Upgrade.</p>
-            </div>
-            <div class="game-card bike" id="card-bike">
-                <h2>DIRT BIKE</h2>
-                <p>Flip & Balance.</p>
+                <p>Click the neon cookie. Buy upgrades.</p>
             </div>
         </div>
     </div>
 
-    <!-- Container for Dirt Bike (External HTML) -->
-    <div id="game-iframe-container">
-        <iframe id="game-frame" src=""></iframe>
+    <!-- Wave UI -->
+    <div id="wave-level-select" class="screen hidden">
+        <h2 style="color: var(--neon-blue); margin-top: 0; flex-shrink: 0;">SELECT LEVEL</h2>
+        
+        <div class="level-grid" id="level-grid-container"></div>
+        
+        <div class="pagination-controls">
+            <button class="page-btn" id="prev-page">PREV</button>
+            <span id="page-indicator">Page 1 / 3</span>
+            <button class="page-btn" id="next-page">NEXT</button>
+        </div>
+
+        <div class="trail-customizer">
+            <div style="font-size: 0.8rem; color: #aaa; text-transform: uppercase;">Trail Color</div>
+            <div class="color-options" id="trail-color-picker">
+                <div class="color-dot active" data-color="rgba(255, 255, 255, 1)" style="background: #fff"></div>
+                <div class="color-dot" data-color="rgba(0, 242, 255, 1)" style="background: var(--neon-blue)"></div>
+                <div class="color-dot" data-color="rgba(255, 0, 127, 1)" style="background: var(--neon-pink)"></div>
+                <div class="color-dot" data-color="rgba(0, 255, 136, 1)" style="background: var(--neon-green)"></div>
+                <div class="color-dot" data-color="rgba(255, 170, 0, 1)" style="background: var(--neon-orange)"></div>
+                <div class="color-dot" data-color="rgba(188, 19, 254, 1)" style="background: var(--neon-purple)"></div>
+            </div>
+        </div>
+
+        <button class="action-btn" id="close-level-select" style="background: #333; margin-top: 20px;">Back to Hub</button>
     </div>
 
-    <!-- Wave/Math UI code remains the same as before but hidden -->
-    <!-- ... (Previous UI blocks omitted for brevity but preserved in logic) ... -->
+    <div id="wave-ui" class="hidden">
+        <div id="wave-level-display" style="position: absolute; top: 20px; left: 160px; font-size: 1.2rem; color: var(--neon-blue); pointer-events: none;">Level: 1</div>
+        <div id="wave-score-container" style="position: absolute; top: 20px; right: 160px; font-size: 2rem; opacity: 0.5; pointer-events: none;">0</div>
+        <div id="wave-over" class="screen hidden" style="pointer-events: auto;">
+            <h1 style="color: var(--neon-pink)">CRASHED</h1>
+            <button class="action-btn" id="wave-retry">Retry</button>
+        </div>
+    </div>
+
+    <!-- Math UI -->
+    <div id="math-ui" class="hidden">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+            <div id="math-problem" style="font-size: 4rem; margin-bottom: 20px; text-shadow: 0 0 10px white;">? + ?</div>
+            <input type="number" id="math-input" style="background: black; border: 2px solid var(--neon-pink); color: white; font-size: 2rem; text-align: center; width: 150px; border-radius: 10px;">
+        </div>
+        <div id="math-over" class="screen hidden" style="pointer-events: auto;">
+            <h1 style="color: var(--neon-pink)">TIME OUT</h1>
+            <button class="action-btn" id="math-retry">Retry</button>
+        </div>
+    </div>
+
+    <!-- Clicker UI -->
+    <div id="clicker-ui" class="hidden">
+        <div class="clicker-main">
+            <div class="stat-label">Total Crumbs</div>
+            <div id="cookie-count" class="stat-val">0</div>
+            <div class="stat-label">Production: <span id="cps-val" style="color: var(--neon-green)">0</span> / sec</div>
+            <div id="big-cookie" style="margin-top: 40px;">🍪</div>
+        </div>
+        <div class="clicker-shop">
+            <h2 style="color: var(--neon-orange); font-size: 1.2rem;">SHOP</h2>
+            <div id="save-status">Progress Saved!</div>
+            <div id="shop-container"></div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
 
     <script>
+        // --- INITIAL SETUP ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
         const backBtn = document.getElementById('back-to-menu');
         const mainMenu = document.getElementById('main-menu');
-        const gameFrame = document.getElementById('game-frame');
-        const frameContainer = document.getElementById('game-iframe-container');
+        
+        let activeGame = null;
+        let isPlaying = false;
+        let keys = {};
+        let selectedTrailColor = "rgba(255, 255, 255, 1)";
 
-        // NAVIGATION
-        document.getElementById('card-bike').onclick = () => {
-            mainMenu.classList.add('hidden');
-            backBtn.style.display = 'block';
-            frameContainer.style.display = 'block';
-            gameFrame.src = 'dirt_bike.html';
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- AUDIO ENGINE ---
+        const AudioEngine = {
+            ctx: null, masterGain: null, isMuted: true,
+            init() {
+                if (this.ctx) return;
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.2;
+                this.masterGain.connect(this.ctx.destination);
+            },
+            toggleMute() {
+                this.init();
+                this.isMuted = !this.isMuted;
+                document.getElementById('audio-toggle').innerText = `SOUND: ${this.isMuted ? 'OFF' : 'ON'}`;
+            },
+            playNote(freq, type, duration) {
+                if (this.isMuted || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                osc.connect(g); g.connect(this.masterGain);
+                osc.start(); osc.stop(this.ctx.currentTime + duration);
+            }
         };
 
-        // Simplified Hub Game Logic
-        document.getElementById('card-wave').onclick = () => alert("Neon Wave loading... (Logic integrated in single file)");
-        document.getElementById('card-math').onclick = () => alert("Math Dash loading...");
-        document.getElementById('card-clicker').onclick = () => alert("Cookie Clicker loading...");
+        document.getElementById('audio-toggle').onclick = () => AudioEngine.toggleMute();
 
-        backBtn.onclick = () => {
+        // --- NAVIGATION LOGIC ---
+        document.getElementById('card-wave').onclick = () => {
+            mainMenu.classList.add('hidden');
+            document.getElementById('wave-level-select').classList.remove('hidden');
+            backBtn.style.display = 'block';
+            currentLevelPage = 0; 
+            renderWaveLevels();
+        };
+
+        document.getElementById('card-math').onclick = () => switchGame('math');
+        document.getElementById('card-clicker').onclick = () => switchGame('clicker');
+
+        document.getElementById('close-level-select').onclick = () => {
+            document.getElementById('wave-level-select').classList.add('hidden');
             mainMenu.classList.remove('hidden');
             backBtn.style.display = 'none';
-            frameContainer.style.display = 'none';
-            gameFrame.src = ''; // Stop game
-            // Add logic to hide other game UIs here
         };
 
-        // Mobile touch handling for the Hub itself
-        document.addEventListener('touchstart', function(e) {
-            // Prevents zoom on some devices
-            if (e.touches.length > 1) e.preventDefault();
-        }, { passive: false });
+        backBtn.onclick = () => {
+            if (activeGame === 'clicker') saveLocalData();
+            activeGame = null; 
+            isPlaying = false;
+            mainMenu.classList.remove('hidden');
+            backBtn.style.display = 'none';
+            ['wave-ui','math-ui','clicker-ui','wave-level-select','wave-over','math-over'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+        };
+
+        function switchGame(mode, data = null) {
+            activeGame = mode;
+            mainMenu.classList.add('hidden');
+            backBtn.style.display = 'block';
+            const ui = document.getElementById(`${mode}-ui`);
+            if (ui) ui.classList.remove('hidden');
+            
+            if (mode === 'wave') startWave(data);
+            if (mode === 'math') startMath();
+            if (mode === 'clicker') startClicker();
+        }
+
+        // --- TRAIL COLOR PICKER ---
+        const colorDots = document.querySelectorAll('.color-dot');
+        colorDots.forEach(dot => {
+            dot.onclick = () => {
+                colorDots.forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                selectedTrailColor = dot.getAttribute('data-color');
+                saveLocalData();
+            };
+        });
+
+        // --- COOKIE CLICKER GAME ---
+        let cookies = 0; let cps = 0; let clickPower = 1;
+        const shopItems = [
+            { id: 'clicker', name: 'Mega-Click', cost: 10, baseCps: 0, power: 1, owned: 0, desc: '+1 Click Power' },
+            { id: 'baker', name: 'Auto-Baker', cost: 15, baseCps: 1, power: 0, owned: 0, desc: 'Bakes 1 cookie/sec' },
+            { id: 'oven', name: 'Neon Oven', cost: 100, baseCps: 8, power: 0, owned: 0, desc: 'Bakes 8 cookies/sec' },
+            { id: 'factory', name: 'Cookie Factory', cost: 1000, baseCps: 50, power: 0, owned: 0, desc: 'Mass production!' }
+        ];
+        function startClicker() { loadLocalData(); isPlaying = true; renderShop(); updateClickerUI(); }
+        document.getElementById('big-cookie').onclick = () => { cookies += clickPower; AudioEngine.playNote(600, 'sine', 0.1); updateClickerUI(); };
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+            shopItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `shop-item ${cookies < item.cost ? 'disabled' : ''}`;
+                div.innerHTML = `<div class="owned-tag">${item.owned}</div><h4>${item.name}</h4><p>${item.desc}</p><div class="shop-cost">Cost: ${Math.floor(item.cost)}</div>`;
+                div.onclick = () => { if (cookies >= item.cost) { cookies -= item.cost; item.owned++; item.cost *= 1.25; calculateStats(); renderShop(); updateClickerUI(); saveLocalData(); }};
+                container.appendChild(div);
+            });
+        }
+        function calculateStats() { cps = shopItems.reduce((acc, i) => acc + (i.owned * (i.baseCps || 0)), 0); clickPower = 1 + shopItems.reduce((acc, i) => acc + (i.owned * (i.power || 0)), 0); }
+        function updateClickerUI() {
+            const countEl = document.getElementById('cookie-count'); const cpsEl = document.getElementById('cps-val');
+            if (countEl) countEl.innerText = Math.floor(cookies).toLocaleString();
+            if (cpsEl) cpsEl.innerText = cps.toFixed(1);
+            const items = document.querySelectorAll('.shop-item');
+            shopItems.forEach((item, idx) => { if (items[idx]) { if (cookies < item.cost) items[idx].classList.add('disabled'); else items[idx].classList.remove('disabled'); }});
+        }
+
+        // --- SAVE/LOAD ENHANCED ---
+        function saveLocalData() {
+            const data = { 
+                cookies, 
+                shopItems, 
+                selectedTrailColor,
+                lastSaved: Date.now() 
+            };
+            localStorage.setItem('matthews_hub_save', JSON.stringify(data));
+            const status = document.getElementById('save-status');
+            if (status) { status.style.opacity = 1; setTimeout(() => status.style.opacity = 0, 1000); }
+        }
+        function loadLocalData() {
+            const saved = localStorage.getItem('matthews_hub_save');
+            if (saved) {
+                const data = JSON.parse(saved); 
+                cookies = data.cookies || 0;
+                if (data.shopItems) {
+                    data.shopItems.forEach((savedItem, i) => { if (shopItems[i]) { shopItems[i].owned = savedItem.owned; shopItems[i].cost = savedItem.cost; }});
+                }
+                if (data.selectedTrailColor) {
+                    selectedTrailColor = data.selectedTrailColor;
+                    colorDots.forEach(dot => {
+                        dot.classList.remove('active');
+                        if (dot.getAttribute('data-color') === selectedTrailColor) dot.classList.add('active');
+                    });
+                }
+                calculateStats();
+            }
+        }
+
+        // --- NEON WAVE GAME ---
+        let player = { x: 0, y: 0, trail: [], angle: 0 }, walls = [], waveLvl = null, score = 0;
+        const WAVE_LEVELS = [
+            { id: 1, speed: 5, gap: 350, color: '#00f2ff' },
+            { id: 2, speed: 5.5, gap: 340, color: '#00e2ff' },
+            { id: 3, speed: 6, gap: 320, color: '#ff007f' },
+            { id: 4, speed: 6.5, gap: 300, color: '#ff00a0' },
+            { id: 5, speed: 7, gap: 280, color: '#00ff88' },
+            { id: 6, speed: 7.5, gap: 270, color: '#00ff66' },
+            { id: 7, speed: 8, gap: 260, color: '#ffaa00' },
+            { id: 8, speed: 8.5, gap: 250, color: '#ffcc00' },
+            { id: 9, speed: 9, gap: 240, color: '#bc13fe' },
+            { id: 10, speed: 10, gap: 230, color: '#ff0000' }
+        ];
+
+        let currentLevelPage = 0;
+        const itemsPerPage = 4;
+        const HORIZONTAL_SPACING = 600;
+
+        function renderWaveLevels() {
+            const container = document.getElementById('level-grid-container');
+            const pageIndicator = document.getElementById('page-indicator');
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+            
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const startIdx = currentLevelPage * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const totalPages = Math.ceil(WAVE_LEVELS.length / itemsPerPage);
+            const pageItems = WAVE_LEVELS.slice(startIdx, endIdx);
+
+            pageItems.forEach(lvl => {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+                btn.innerHTML = `<strong>LEVEL ${lvl.id}</strong><br><small>Speed: ${lvl.speed}</small>`;
+                btn.style.borderLeft = `5px solid ${lvl.color}`;
+                btn.onclick = () => {
+                    document.getElementById('wave-level-select').classList.add('hidden');
+                    switchGame('wave', lvl);
+                };
+                container.appendChild(btn);
+            });
+
+            pageIndicator.innerText = `Page ${currentLevelPage + 1} / ${totalPages}`;
+            prevBtn.disabled = currentLevelPage === 0;
+            nextBtn.disabled = currentLevelPage >= totalPages - 1;
+        }
+
+        document.getElementById('prev-page').onclick = () => { if (currentLevelPage > 0) { currentLevelPage--; renderWaveLevels(); }};
+        document.getElementById('next-page').onclick = () => { const totalPages = Math.ceil(WAVE_LEVELS.length / itemsPerPage); if (currentLevelPage < totalPages - 1) { currentLevelPage++; renderWaveLevels(); }};
+
+        function startWave(lvl) {
+            waveLvl = lvl; 
+            isPlaying = true;
+            score = 0;
+            player = { x: 200, y: canvas.height/2, trail: [], angle: 0 };
+            walls = [];
+            for(let i=0; i<3; i++) spawnWall(800 + i * HORIZONTAL_SPACING);
+            document.getElementById('wave-over').classList.add('hidden');
+            document.getElementById('wave-level-display').innerText = `Level: ${lvl.id}`;
+            document.getElementById('wave-score-container').innerText = '0';
+        }
+
+        function spawnWall(x) {
+            const top = Math.random() * (canvas.height - waveLvl.gap - 100) + 50;
+            walls.push({ x, w: 70, top, bottom: top + waveLvl.gap });
+        }
+
+        document.getElementById('wave-retry').onclick = () => startWave(waveLvl);
+
+        // --- MATH DASH GAME ---
+        let mathEnergy = 100, mathAns = 0;
+        function startMath() { mathEnergy = 100; isPlaying = true; document.getElementById('math-over').classList.add('hidden'); genMath(); const input = document.getElementById('math-input'); input.value = ''; input.focus(); }
+        function genMath() { const n1 = Math.floor(Math.random() * 12) + 1; const n2 = Math.floor(Math.random() * 12) + 1; mathAns = n1 + n2; document.getElementById('math-problem').innerText = `${n1} + ${n2}`; }
+        document.getElementById('math-input').oninput = (e) => { if (parseInt(e.target.value) === mathAns) { mathEnergy = Math.min(100, mathEnergy + 15); e.target.value = ''; genMath(); AudioEngine.playNote(800, 'sine', 0.1); }};
+        document.getElementById('math-retry').onclick = () => startMath();
+
+        // --- CORE GAME LOOP ---
+        function loop() {
+            if (isPlaying) {
+                if (activeGame === 'wave') {
+                    const dy = (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
+                    player.x += waveLvl.speed;
+                    player.y += dy;
+                    
+                    // Calculate angle based on vertical movement
+                    player.angle = Math.atan2(dy, waveLvl.speed);
+                    
+                    player.trail.push({ x: player.x, y: player.y });
+                    const maxTrail = 15 + (score * 5);
+                    if (player.trail.length > maxTrail) player.trail.shift();
+
+                    if (player.y < 0 || player.y > canvas.height) { isPlaying = false; document.getElementById('wave-over').classList.remove('hidden'); }
+                    walls.forEach(w => {
+                        if (player.x + 10 > w.x && player.x - 10 < w.x + w.w) {
+                            if (player.y - 10 < w.top || player.y + 10 > w.bottom) { isPlaying = false; document.getElementById('wave-over').classList.remove('hidden'); }
+                        }
+                    });
+                    if (player.x > walls[0].x + walls[0].w + 200) { 
+                        walls.shift(); 
+                        spawnWall(walls[walls.length-1].x + HORIZONTAL_SPACING); 
+                        score++; 
+                        document.getElementById('wave-score-container').innerText = score; 
+                    }
+                }
+                if (activeGame === 'math') { mathEnergy -= 0.2; if (mathEnergy <= 0) { isPlaying = false; document.getElementById('math-over').classList.remove('hidden'); }}
+                if (activeGame === 'clicker') { cookies += (cps / 60); updateClickerUI(); }
+            }
+            ctx.fillStyle = '#050510'; ctx.fillRect(0,0,canvas.width, canvas.height);
+            
+            if (activeGame === 'wave') {
+                ctx.save(); ctx.translate(-player.x + 200, 0); 
+                
+                // Draw Walls
+                ctx.fillStyle = waveLvl.color;
+                walls.forEach(w => { 
+                    ctx.fillRect(w.x, 0, w.w, w.top); 
+                    ctx.fillRect(w.x, w.bottom, w.w, canvas.height); 
+                    ctx.shadowBlur = 15; 
+                    ctx.shadowColor = waveLvl.color; 
+                });
+
+                // Draw Trail with Custom Color
+                if (player.trail.length > 1) {
+                    ctx.shadowBlur = 0;
+                    for (let i = 0; i < player.trail.length - 1; i++) {
+                        const alpha = (i / player.trail.length) * 0.8;
+                        const size = (i / player.trail.length) * 8;
+                        ctx.beginPath();
+                        ctx.arc(player.trail[i].x, player.trail[i].y, size, 0, Math.PI * 2);
+                        const baseColor = selectedTrailColor.replace("1)", alpha + ")");
+                        ctx.fillStyle = baseColor;
+                        ctx.fill();
+                    }
+                }
+
+                // Draw Player as a Triangle
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                ctx.rotate(player.angle);
+                ctx.shadowBlur = 20; ctx.shadowColor = 'white'; ctx.fillStyle = 'white'; 
+                ctx.beginPath(); 
+                // Draw triangle relative to its center
+                ctx.moveTo(15, 0);       // Point
+                ctx.lineTo(-10, -10);    // Back top
+                ctx.lineTo(-10, 10);     // Back bottom
+                ctx.closePath();
+                ctx.fill(); 
+                ctx.restore();
+
+                ctx.restore();
+            }
+            
+            if (activeGame === 'math') {
+                ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(canvas.width/2 - 150, 40, 300, 20);
+                ctx.fillStyle = mathEnergy > 30 ? varName('--neon-green') : varName('--neon-pink');
+                ctx.fillRect(canvas.width/2 - 150, 40, (mathEnergy/100) * 300, 20);
+            }
+            requestAnimationFrame(loop);
+        }
+        function varName(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+        window.onkeydown = (e) => keys[e.key] = true;
+        window.onkeyup = (e) => keys[e.key] = false;
+        window.ontouchstart = () => keys['touchstart'] = true;
+        window.ontouchend = () => keys['touchstart'] = false;
+        
+        loadLocalData();
+        loop();
     </script>
 </body>
 </html>
