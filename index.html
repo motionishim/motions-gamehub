@@ -26,6 +26,8 @@
             touch-action: none;
         }
 
+        .hidden { display: none !important; }
+
         /* --- DYNAMIC BACKGROUND --- */
         #bg-canvas {
             position: fixed;
@@ -263,6 +265,11 @@
         canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
         #wave-ui, #math-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
         #math-input { pointer-events: auto; }
+
+        @media (max-width: 768px) {
+            .clicker-ui { flex-direction: column; }
+            .clicker-shop { width: 100%; border-left: none; border-top: 1px solid var(--glass-border); }
+        }
     </style>
 </head>
 <body>
@@ -300,15 +307,10 @@
         </div>
     </div>
 
-    <!-- Wave UI (Existing logic preserved, but updated IDs/CSS) -->
+    <!-- Wave UI Level Selection (Starts Hidden) -->
     <div id="wave-level-select" class="screen hidden">
         <h2 style="color: var(--neon-blue); margin-top: 0;">SELECT TRIAL</h2>
         <div class="level-grid" id="level-grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0;"></div>
-        <div class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <button class="btn-ui" id="prev-page" style="padding: 8px 15px;">Prev</button>
-            <span id="page-indicator" style="font-size: 0.8rem; opacity: 0.6;">Page 1 / 3</span>
-            <button class="btn-ui" id="next-page" style="padding: 8px 15px;">Next</button>
-        </div>
         <button class="action-btn" id="close-level-select" style="background: #222; width: 100%;">Close</button>
     </div>
 
@@ -325,7 +327,7 @@
     <div id="math-ui" class="hidden">
         <div style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
             <div id="math-problem" style="font-size: 5rem; font-weight: 900; text-shadow: 0 0 30px rgba(255,255,255,0.5);">? + ?</div>
-            <input type="number" id="math-input" autofocus style="background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); color: white; font-size: 3rem; text-align: center; width: 200px; border-radius: 20px; margin-top: 30px; outline: none;">
+            <input type="number" id="math-input" style="background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); color: white; font-size: 3rem; text-align: center; width: 200px; border-radius: 20px; margin-top: 30px; outline: none;">
         </div>
         <div id="math-over" class="screen hidden" style="pointer-events: auto;">
             <h1 style="color: var(--neon-pink)">ENERGY DEPLETED</h1>
@@ -426,6 +428,12 @@
         };
         document.getElementById('card-math').onclick = () => switchGame('math');
         document.getElementById('card-clicker').onclick = () => switchGame('clicker');
+        
+        document.getElementById('close-level-select').onclick = () => {
+            document.getElementById('wave-level-select').classList.add('hidden');
+            mainMenu.classList.remove('hidden');
+            backBtn.style.display = 'none';
+        };
 
         function switchGame(mode, data = null) {
             activeGame = mode;
