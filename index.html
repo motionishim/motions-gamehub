@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Matthew's Hub - Arcade</title>
+    <style>
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-pink: #ff007f;
+            --neon-green: #00ff88;
+            --neon-orange: #ffaa00;
+            --neon-purple: #bc13fe;
+            --bg-dark: #050510;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            color: white;
+            touch-action: none;
+        }
+
+        /* --- NAVIGATION & HUB --- */
+        #main-menu {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #101030 0%, #050510 100%);
+            z-index: 100;
+        }
+
+        .hub-title {
+            font-size: 3rem;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            color: white;
+            text-shadow: 0 0 20px var(--neon-blue);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .game-card-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .game-card {
+            width: 180px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--neon-blue);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            background: rgba(0, 242, 255, 0.1);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.3);
+        }
+
+        .game-card.math { border-color: var(--neon-pink); }
+        .game-card.math:hover { box-shadow: 0 0 30px rgba(255, 0, 127, 0.3); }
+        
+        .game-card.clicker { border-color: var(--neon-orange); }
+        .game-card.clicker:hover { box-shadow: 0 0 30px rgba(255, 170, 0, 0.3); }
+
+        .game-card h2 { margin: 10px 0; font-size: 1.2rem; }
+        .game-card p { font-size: 0.8rem; color: #8af; }
+
+        #back-to-menu {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 200;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: none;
+        }
+
+        #audio-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 200;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* --- SHARED UI --- */
+        .hidden { display: none !important; }
+        .screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(5, 5, 20, 0.95);
+            padding: 30px;
+            border-radius: 24px;
+            border: 2px solid white;
+            backdrop-filter: blur(25px);
+            z-index: 150;
+            width: 420px;
+            text-align: center;
+            max-width: 90vw;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        button.action-btn {
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
+            border: none;
+            padding: 12px 30px;
+            color: white;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        /* --- COOKIE CLICKER UI --- */
+        #clicker-ui {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+            background: #050515;
+        }
+        .clicker-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+        }
+        .clicker-shop {
+            width: 320px;
+            padding: 20px;
+            background: rgba(0,0,0,0.4);
+            overflow-y: auto;
+            border-left: 1px solid rgba(0, 242, 255, 0.2);
+        }
+        #big-cookie {
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, #ffaa00 0%, #aa6600 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 8px solid white;
+            box-shadow: 0 0 30px var(--neon-orange);
+            transition: transform 0.05s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6rem;
+            user-select: none;
+        }
+        #big-cookie:active { transform: scale(0.92); }
+        .stat-val { font-size: 2.5rem; color: var(--neon-orange); font-weight: bold; margin-bottom: 5px; text-shadow: 0 0 10px rgba(255, 170, 0, 0.5); }
+        .stat-label { color: #888; text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .shop-item {
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .shop-item:hover:not(.disabled) { background: rgba(255,255,255,0.08); border-color: var(--neon-orange); transform: translateX(-5px); }
+        .shop-item.disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
+        .shop-item h4 { margin: 0; color: var(--neon-orange); font-size: 1rem; }
+        .shop-item p { margin: 5px 0; font-size: 0.75rem; color: #aaa; line-height: 1.2; }
+        .shop-cost { font-weight: bold; color: var(--neon-green); font-size: 0.9rem; margin-top: 5px; }
+        .owned-tag { position: absolute; top: 10px; right: 10px; font-size: 0.7rem; color: var(--neon-blue); font-weight: bold; }
+
+        #save-status {
+            font-size: 0.7rem;
+            color: var(--neon-green);
+            opacity: 0;
+            transition: opacity 0.5s;
+            margin-bottom: 10px;
+        }
+
+        .welcome-back {
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid var(--neon-blue);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* --- WAVE LEVEL PAGINATION --- */
+        .level-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; min-height: 200px; }
+        .level-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 15px; border-radius: 12px; cursor: pointer; text-align: left; transition: 0.2s; }
+        .level-btn:hover { border-color: var(--neon-blue); background: rgba(0, 242, 255, 0.1); }
+        .pagination-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+        .nav-btn { background: rgba(255,255,255,0.1); border: 1px solid white; color: white; padding: 5px 15px; border-radius: 15px; cursor: pointer; font-size: 0.8rem; }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+
+    <button id="back-to-menu">BACK TO HUB</button>
+    <button id="audio-toggle">SOUND: OFF</button>
+
+    <!-- Main Hub -->
+    <div id="main-menu">
+        <h1 class="hub-title">MATTHEW'S HUB</h1>
+        <div class="game-card-container">
+            <div class="game-card" id="card-wave">
+                <h2>NEON WAVE</h2>
+                <p>Avoid walls. Master the gravity pulse.</p>
+            </div>
+            <div class="game-card math" id="card-math">
+                <h2>MATH DASH</h2>
+                <p>Solve quickly. Don't drain the energy.</p>
+            </div>
+            <div class="game-card clicker" id="card-clicker">
+                <h2>COOKIE CRUNCH</h2>
+                <p>Click the neon cookie. Buy upgrades.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Neon Wave Level Select -->
+    <div id="wave-level-select" class="screen hidden">
+        <h2 style="color: var(--neon-blue); margin-top: 0;">SELECT LEVEL</h2>
+        <div class="level-grid" id="level-grid-container"></div>
+        <div class="pagination-controls">
+            <button class="nav-btn" id="prev-page">PREV</button>
+            <span id="page-info" style="font-size: 0.8rem; color: #888;">Page 1 of 3</span>
+            <button class="nav-btn" id="next-page">NEXT</button>
+        </div>
+        <button class="action-btn" id="close-level-select" style="background: #333; margin-top: 20px;">Back</button>
+    </div>
+
+    <!-- Neon Wave UI -->
+    <div id="wave-ui" class="hidden">
+        <div id="wave-level-display" style="position: absolute; top: 20px; left: 120px; font-size: 1.2rem; color: var(--neon-blue);">Level: 1</div>
+        <div id="wave-score-container" style="position: absolute; top: 20px; right: 120px; font-size: 2rem; opacity: 0.5;">0</div>
+        <div id="wave-over" class="screen hidden">
+            <h1 style="color: var(--neon-pink)">CRASHED</h1>
+            <button class="action-btn" id="wave-retry">Retry</button>
+            <button class="action-btn" id="wave-back-to-levels" style="background: #333; margin-left: 10px;">Levels</button>
+        </div>
+    </div>
+
+    <!-- Math Dash UI -->
+    <div id="math-ui" class="hidden">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
+            <div class="timer-strip" style="width: 300px; height: 10px; background: #222; margin: 0 auto 20px;"><div id="timer-fill" style="height:100%; background: var(--neon-green); width: 100%;"></div></div>
+            <div id="math-problem" style="font-size: 4rem; margin-bottom: 20px;">? + ?</div>
+            <input type="number" id="math-input" style="pointer-events: auto; background: black; border: 2px solid var(--neon-pink); color: white; font-size: 2rem; text-align: center; width: 150px; border-radius: 10px;">
+        </div>
+        <div id="math-over" class="screen hidden">
+            <h1>TIME OUT</h1>
+            <button class="action-btn" id="math-retry">Retry</button>
+        </div>
+    </div>
+
+    <!-- Cookie Clicker UI -->
+    <div id="clicker-ui" class="hidden">
+        <div class="clicker-main">
+            <div id="away-message-container"></div>
+            <div class="stat-label">Total Crumbs</div>
+            <div id="cookie-count" class="stat-val">0</div>
+            <div class="stat-label" style="margin-top: 10px;">Production: <span id="cps-val" style="color: var(--neon-green)">0</span> / sec</div>
+            <div class="stat-label" style="font-size: 0.7rem;">Click Power: <span id="click-val" style="color: var(--neon-blue)">1</span></div>
+            <div id="big-cookie" style="margin-top: 40px;">🍪</div>
+        </div>
+        <div class="clicker-shop">
+            <h2 style="color: var(--neon-orange); border-bottom: 1px solid rgba(0, 242, 255, 0.3); padding-bottom: 10px; margin-top: 0; font-size: 1.2rem;">SHOP</h2>
+            <div id="save-status">Progress Saved!</div>
+            <div id="shop-container"></div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // IMPORTANT: Replace this with your own Firebase Config if you have one, 
+        // otherwise this uses the Canvas environment's auto-config.
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'matthews-arcade-hub';
+
+        let currentUser = null;
+
+        const AudioEngine = {
+            ctx: null, masterGain: null, isMuted: true,
+            init() {
+                if (this.ctx) return;
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.3;
+                this.masterGain.connect(this.ctx.destination);
+            },
+            toggleMute() {
+                this.init();
+                this.isMuted = !this.isMuted;
+                document.getElementById('audio-toggle').innerText = `SOUND: ${this.isMuted ? 'OFF' : 'ON'}`;
+            },
+            playNote(freq, type, duration) {
+                if (this.isMuted || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                osc.connect(g); g.connect(this.masterGain);
+                osc.start(); osc.stop(this.ctx.currentTime + duration);
+            }
+        };
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const backBtn = document.getElementById('back-to-menu');
+        const mainMenu = document.getElementById('main-menu');
+        
+        let activeGame = null; let isPlaying = false; let keys = {};
+
+        // --- HUB NAVIGATION ---
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        document.getElementById('audio-toggle').onclick = () => AudioEngine.toggleMute();
+        
+        document.getElementById('card-wave').onclick = () => {
+            mainMenu.classList.add('hidden');
+            document.getElementById('wave-level-select').classList.remove('hidden');
+            backBtn.style.display = 'block';
+            renderWaveLevels();
+        };
+
+        document.getElementById('card-math').onclick = () => switchGame('math');
+        document.getElementById('card-clicker').onclick = () => switchGame('clicker');
+
+        document.getElementById('close-level-select').onclick = () => {
+            document.getElementById('wave-level-select').classList.add('hidden');
+            mainMenu.classList.remove('hidden');
+            backBtn.style.display = 'none';
+        };
+
+        backBtn.onclick = () => {
+            if (activeGame === 'clicker') saveGameData(); 
+            activeGame = null; isPlaying = false;
+            mainMenu.classList.remove('hidden');
+            backBtn.style.display = 'none';
+            ['wave-ui','math-ui','clicker-ui','wave-level-select'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        };
+
+        function switchGame(mode, data = null) {
+            activeGame = mode;
+            mainMenu.classList.add('hidden');
+            backBtn.style.display = 'block';
+            document.getElementById(`${mode}-ui`).classList.remove('hidden');
+            if (mode === 'wave') startWave(data);
+            if (mode === 'math') startMath();
+            if (mode === 'clicker') startClicker();
+        }
+
+        // --- COOKIE CLICKER LOGIC ---
+        let cookies = 0;
+        let totalCookiesEarned = 0;
+        let cps = 0;
+        let clickPower = 1;
+        
+        const shopItems = [
+            { id: 'clicker', name: 'Mega-Click', cost: 10, baseCps: 0, power: 1, owned: 0, unlocked: false, unlockAt: 0, desc: 'Adds +1 to your manual click power.' },
+            { id: 'baker', name: 'Auto-Baker', cost: 15, baseCps: 1, power: 0, owned: 0, unlocked: false, unlockAt: 0, desc: 'A simple robot that clicks for you.' },
+            { id: 'oven', name: 'Neon Oven', cost: 100, baseCps: 8, power: 0, owned: 0, unlocked: false, unlockAt: 50, desc: 'Bakes high-speed neon treats.' },
+            { id: 'factory', name: 'Cookie Factory', cost: 1100, baseCps: 45, power: 0, owned: 0, unlocked: false, unlockAt: 500, desc: 'Mass production of digital crumbs.' },
+            { id: 'mine', name: 'Crumbs Mine', cost: 12000, baseCps: 280, owned: 0, unlocked: false, unlockAt: 6000, desc: 'Extracts crumbs from the deep grid.' },
+            { id: 'quantum', name: 'Quantum Whisk', cost: 150000, baseCps: 1450, owned: 0, unlocked: false, unlockAt: 75000, desc: 'Bakes cookies in multiple timelines at once.' },
+            { id: 'galactic', name: 'Galactic Bakery', cost: 1200000, baseCps: 8500, owned: 0, unlocked: false, unlockAt: 600000, desc: 'Harnesses the energy of entire stars to bake.' },
+            { id: 'void', name: 'Void Dough', cost: 25000000, baseCps: 65000, owned: 0, unlocked: false, unlockAt: 12500000, desc: 'Infinite cookies from the dark dimension.' }
+        ];
+
+        async function saveGameData() {
+            if (!currentUser) return;
+            const data = {
+                cookies,
+                totalCookiesEarned,
+                shopItems: shopItems.map(i => ({ id: i.id, owned: i.owned, cost: i.cost, unlocked: i.unlocked })),
+                lastSaved: Date.now()
+            };
+            try {
+                const userDoc = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'games', 'cookie-crunch');
+                await setDoc(userDoc, data);
+                showSaveIndicator();
+            } catch (e) {
+                console.error("Save failed", e);
+            }
+        }
+
+        async function loadGameData() {
+            if (!currentUser) return;
+            try {
+                const userDoc = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'games', 'cookie-crunch');
+                const snap = await getDoc(userDoc);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    cookies = data.cookies || 0;
+                    totalCookiesEarned = data.totalCookiesEarned || 0;
+                    if (data.shopItems) {
+                        data.shopItems.forEach(savedItem => {
+                            const item = shopItems.find(i => i.id === savedItem.id);
+                            if (item) {
+                                item.owned = savedItem.owned;
+                                item.cost = savedItem.cost;
+                                item.unlocked = savedItem.unlocked;
+                            }
+                        });
+                    }
+                    calculateStats();
+                    if (data.lastSaved && cps > 0) {
+                        const now = Date.now();
+                        const secondsAway = Math.floor((now - data.lastSaved) / 1000);
+                        if (secondsAway > 60) {
+                            const earned = secondsAway * cps;
+                            addCookies(earned);
+                            showAwayMessage(earned, secondsAway);
+                        }
+                    }
+                    renderShop();
+                    updateClickerUI();
+                }
+            } catch (e) { console.error("Load failed", e); }
+        }
+
+        function showAwayMessage(amount, seconds) {
+            const container = document.getElementById('away-message-container');
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            let timeStr = (h > 0 ? h + "h " : "") + m + "m";
+            container.innerHTML = `
+                <div class="welcome-back">
+                    <div style="font-weight: bold; color: var(--neon-blue); margin-bottom: 5px;">WELCOME BACK!</div>
+                    <div style="font-size: 0.8rem;">Away for ${timeStr}.</div>
+                    <div style="font-size: 1.1rem; color: var(--neon-green); margin-top: 5px;">+${Math.floor(amount).toLocaleString()} crumbs!</div>
+                    <button onclick="this.parentElement.remove()" style="background: none; border: 1px solid white; color: white; padding: 2px 10px; border-radius: 10px; margin-top: 10px; cursor: pointer; font-size: 0.7rem;">Dismiss</button>
+                </div>
+            `;
+        }
+
+        function showSaveIndicator() {
+            const el = document.getElementById('save-status');
+            el.style.opacity = 1;
+            setTimeout(() => el.style.opacity = 0, 2000);
+        }
+
+        function startClicker() {
+            isPlaying = true;
+            checkShopUnlocks();
+            updateClickerUI();
+        }
+
+        document.getElementById('big-cookie').onclick = () => {
+            addCookies(clickPower);
+            AudioEngine.playNote(600, 'sine', 0.1);
+            updateClickerUI();
+        };
+
+        function addCookies(amount) {
+            cookies += amount;
+            totalCookiesEarned += amount;
+            checkShopUnlocks();
+        }
+
+        function checkShopUnlocks() {
+            let newlyUnlocked = false;
+            shopItems.forEach(item => {
+                if (!item.unlocked && totalCookiesEarned >= item.unlockAt) {
+                    item.unlocked = true;
+                    newlyUnlocked = true;
+                }
+            });
+            if (newlyUnlocked) {
+                renderShop();
+                AudioEngine.playNote(1200, 'sine', 0.2);
+            }
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+            shopItems.filter(i => i.unlocked).forEach(item => {
+                const div = document.createElement('div');
+                div.className = `shop-item ${cookies < item.cost ? 'disabled' : ''}`;
+                div.innerHTML = `
+                    <div class="owned-tag">${item.owned}</div>
+                    <h4>${item.name}</h4>
+                    <p>${item.desc}</p>
+                    <div class="shop-cost">Cost: ${Math.floor(item.cost).toLocaleString()}</div>
+                `;
+                div.onclick = () => buyItem(item);
+                container.appendChild(div);
+            });
+        }
+
+        function buyItem(item) {
+            if (cookies >= item.cost) {
+                cookies -= item.cost;
+                item.owned++;
+                item.cost *= 1.18; 
+                calculateStats();
+                renderShop();
+                updateClickerUI();
+                AudioEngine.playNote(880, 'square', 0.1);
+                saveGameData();
+            }
+        }
+
+        function calculateStats() {
+            cps = shopItems.reduce((acc, item) => acc + (item.owned * (item.baseCps || 0)), 0);
+            clickPower = 1 + shopItems.reduce((acc, item) => acc + (item.owned * (item.power || 0)), 0);
+        }
+
+        function updateClickerUI() {
+            document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
+            document.getElementById('cps-val').innerText = cps.toLocaleString(undefined, {minimumFractionDigits: 1});
+            document.getElementById('click-val').innerText = clickPower.toLocaleString();
+            const shopEls = document.querySelectorAll('.shop-item');
+            const unlockedOnly = shopItems.filter(i => i.unlocked);
+            unlockedOnly.forEach((item, i) => {
+                if (shopEls[i]) {
+                    if (cookies < item.cost) shopEls[i].classList.add('disabled');
+                    else shopEls[i].classList.remove('disabled');
+                }
+            });
+        }
+
+        // --- NEON WAVE LOGIC ---
+        let player = {}, walls = [], waveLvl, waveScore;
+        const WAVE_LEVELS = [
+            { id: 1, speed: 4.5, gap: 340, color: '#00f2ff', diff: 'Beginner' },
+            { id: 2, speed: 5.5, gap: 320, color: '#00ffcc', diff: 'Novice' },
+            { id: 3, speed: 6.5, gap: 300, color: '#00ff88', diff: 'Easy' },
+            { id: 4, speed: 7.5, gap: 280, color: '#88ff00', diff: 'Steady' },
+            { id: 5, speed: 8.5, gap: 260, color: '#ffff00', diff: 'Medium' },
+            { id: 6, speed: 9.5, gap: 240, color: '#ffcc00', diff: 'Hard' },
+            { id: 7, speed: 11.0, gap: 220, color: '#ff8800', diff: 'Expert' },
+            { id: 8, speed: 12.5, gap: 200, color: '#ff4400', diff: 'Master' },
+            { id: 9, speed: 14.5, gap: 185, color: '#ff007f', diff: 'Insane' },
+            { id: 10, speed: 17.0, gap: 165, color: '#ffffff', diff: 'Ultimate' }
+        ];
+
+        let currentLevelPage = 0;
+        const itemsPerPage = 4;
+
+        function renderWaveLevels() {
+            const container = document.getElementById('level-grid-container');
+            container.innerHTML = '';
+            const start = currentLevelPage * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = WAVE_LEVELS.slice(start, end);
+            pageItems.forEach(lvl => {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+                btn.innerHTML = `<strong>LVL ${lvl.id}</strong><br><span style="font-size:0.7rem; color:#aaa">${lvl.diff}</span>`;
+                btn.style.borderLeft = `4px solid ${lvl.color}`;
+                btn.onclick = () => {
+                    document.getElementById('wave-level-select').classList.add('hidden');
+                    switchGame('wave', lvl);
+                };
+                container.appendChild(btn);
+            });
+            const totalPages = Math.ceil(WAVE_LEVELS.length / itemsPerPage);
+            document.getElementById('page-info').innerText = `Page ${currentLevelPage + 1} of ${totalPages}`;
+            document.getElementById('prev-page').disabled = currentLevelPage === 0;
+            document.getElementById('next-page').disabled = currentLevelPage >= totalPages - 1;
+        }
+
+        document.getElementById('prev-page').onclick = () => { if(currentLevelPage > 0) { currentLevelPage--; renderWaveLevels(); } };
+        document.getElementById('next-page').onclick = () => { if(currentLevelPage < Math.ceil(WAVE_LEVELS.length / itemsPerPage) - 1) { currentLevelPage++; renderWaveLevels(); } };
+
+        function startWave(lvl) {
+            waveLvl = lvl; waveScore = 0; isPlaying = true;
+            player = { x: 200, y: canvas.height/2, trail: [] };
+            walls = [{ x: 800, w: 75, top: 200, bottom: 200 + lvl.gap, passed: false }];
+            document.getElementById('wave-over').classList.add('hidden');
+            document.getElementById('wave-score-container').innerText = 0;
+            document.getElementById('wave-level-display').innerText = `Level: ${lvl.id}`;
+        }
+
+        document.getElementById('wave-retry').onclick = () => startWave(waveLvl);
+        document.getElementById('wave-back-to-levels').onclick = () => {
+            document.getElementById('wave-ui').classList.add('hidden');
+            document.getElementById('wave-level-select').classList.remove('hidden');
+        };
+
+        // --- MATH DASH LOGIC ---
+        let mathEnergy, mathAnswer;
+        function startMath() {
+            mathEnergy = 100; isPlaying = true;
+            document.getElementById('math-over').classList.add('hidden');
+            genMath();
+            document.getElementById('math-input').focus();
+        }
+        function genMath() {
+            const n1 = Math.floor(Math.random() * 12) + 1;
+            const n2 = Math.floor(Math.random() * 12) + 1;
+            mathAnswer = n1 + n2;
+            document.getElementById('math-problem').innerText = `${n1} + ${n2}`;
+        }
+        document.getElementById('math-input').oninput = (e) => {
+            if (parseInt(e.target.value) === mathAnswer) {
+                mathEnergy = Math.min(100, mathEnergy + 20);
+                e.target.value = ''; genMath();
+                AudioEngine.playNote(440, 'sine', 0.1);
+            }
+        };
+        document.getElementById('math-retry').onclick = () => startMath();
+
+        // --- MAIN LOOP ---
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            if (isPlaying) {
+                if (activeGame === 'wave') {
+                    player.x += waveLvl.speed;
+                    player.y += (keys[' '] || keys['ArrowUp'] || keys['w']) ? -6.5 : 6.5;
+                    player.trail.push({x: player.x, y: player.y}); if(player.trail.length > 20) player.trail.shift();
+                    if(player.y < 0 || player.y > canvas.height) { isPlaying = false; document.getElementById('wave-over').classList.remove('hidden'); }
+                    walls.forEach(w => {
+                        if (player.x > w.x && player.x < w.x + w.w && (player.y < w.top || player.y > w.bottom)) { 
+                            isPlaying = false; document.getElementById('wave-over').classList.remove('hidden'); 
+                        }
+                        if (!w.passed && player.x > w.x + w.w) { w.passed = true; waveScore++; document.getElementById('wave-score-container').innerText = waveScore; }
+                    });
+                    if(player.x > walls[walls.length-1].x - 600) {
+                        const nextX = walls[walls.length-1].x + 400;
+                        const nextTop = Math.random() * (canvas.height - waveLvl.gap - 100) + 50;
+                        walls.push({x: nextX, w: 70, top: nextTop, bottom: nextTop + waveLvl.gap, passed: false});
+                    }
+                }
+                
+                if (activeGame === 'math') {
+                    mathEnergy -= 0.1;
+                    document.getElementById('timer-fill').style.width = mathEnergy + '%';
+                    if (mathEnergy <= 0) { isPlaying = false; document.getElementById('math-over').classList.remove('hidden'); }
+                }
+
+                if (activeGame === 'clicker') {
+                    const crumbsToAdd = (cps * deltaTime) / 1000;
+                    if (crumbsToAdd > 0) addCookies(crumbsToAdd);
+                    updateClickerUI();
+                }
+            }
+
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (activeGame === 'wave') {
+                ctx.save(); ctx.translate(-player.x + 200, 0);
+                ctx.fillStyle = waveLvl.color;
+                walls.forEach(w => { ctx.fillRect(w.x, 0, w.w, w.top); ctx.fillRect(w.x, w.bottom, w.w, canvas.height); });
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.arc(player.x, player.y, 10, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Initialization ---
+        const init = async () => {
+            // This is the automatic login for the arcade environment
+            try {
+                await signInAnonymously(auth);
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (user) loadGameData();
+                });
+            } catch (e) { console.warn("Firebase Auth failed - progress won't save."); }
+            requestAnimationFrame(gameLoop);
+        };
+
+        window.onkeydown = (e) => keys[e.key] = true;
+        window.onkeyup = (e) => keys[e.key] = false;
+        
+        init();
+
+        // Exporting functions
+        window.startWave = startWave;
+        window.startMath = startMath;
+        window.startClicker = startClicker;
+        window.renderWaveLevels = renderWaveLevels;
+        window.switchGame = switchGame;
+        window.buyItem = buyItem;
+    </script>
+</body>
+</html>
