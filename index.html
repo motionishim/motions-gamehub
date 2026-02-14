@@ -229,6 +229,7 @@
             z-index: 500;
         }
         .clicker-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; position: relative; }
+        .clicker-shop { width: 380px; padding: 30px; background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border-left: 1px solid var(--glass-border); overflow-y: auto; }
         
         #big-cookie { 
             width: 240px; height: 240px; 
@@ -252,6 +253,62 @@
             border: 1px solid var(--glass-border); 
             width: 100%; max-width: 300px; 
             backdrop-filter: blur(10px);
+        }
+
+        .floating-text {
+            position: absolute;
+            color: var(--neon-orange);
+            font-weight: 900;
+            pointer-events: none;
+            animation: float-up 0.8s ease-out forwards;
+            z-index: 600;
+            text-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+
+        @keyframes float-up {
+            0% { transform: translateY(0); opacity: 1; font-size: 1.2rem; }
+            100% { transform: translateY(-120px); opacity: 0; font-size: 1.8rem; }
+        }
+
+        .shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .shop-item {
+            padding: 18px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+        }
+        .shop-item:hover:not(.locked) { 
+            background: rgba(255,255,255,0.08); 
+            border-color: var(--neon-blue);
+            transform: translateX(5px);
+        }
+        .shop-item.locked { opacity: 0.4; cursor: not-allowed; }
+        .shop-item.affordable { border-left: 5px solid var(--neon-green); }
+
+        .item-icon { font-size: 1.5rem; margin-right: 15px; }
+        .item-details { flex: 1; }
+        .item-name { font-weight: 800; color: white; display: block; margin-bottom: 2px; }
+        .item-cost { font-size: 0.8rem; color: var(--neon-green); font-weight: 600; }
+        .item-owned { font-size: 1.2rem; font-weight: 900; color: var(--neon-blue); opacity: 0.8; }
+
+        @media (max-width: 850px) {
+            #clicker-ui { flex-direction: column; overflow-y: auto; }
+            .clicker-shop { width: 100%; border-left: none; border-top: 1px solid var(--glass-border); }
+            .clicker-main { min-height: 60vh; padding: 20px; }
         }
 
         /* Standard Game UIs */
@@ -328,6 +385,21 @@
             color: black;
             font-weight: bold;
         }
+
+        /* Math Shake */
+        .shake { animation: shake 0.3s; border-color: #ff007f !important; box-shadow: 0 0 20px #ff007f; }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+        
+        /* Math Select Specifics */
+        .option-group { margin: 15px 0; }
+        .option-label { font-size: 0.7rem; text-transform: uppercase; color: var(--neon-pink); letter-spacing: 2px; display: block; margin-bottom: 8px; }
+        #math-input { transition: 0.2s; }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -409,6 +481,34 @@
         <button class="btn-ui" id="close-level-select" style="width: 100%; margin-top: 20px;">Back</button>
     </div>
 
+    <!-- Math Select Screen -->
+    <div id="math-select-screen" class="screen hidden">
+        <h2 style="color: var(--neon-pink); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Math Configuration</h2>
+        
+        <div class="option-group">
+            <span class="option-label">Operation</span>
+            <div id="math-op-btns">
+                <button class="btn-ui active" data-op="+">Addition</button>
+                <button class="btn-ui" data-op="-">Subtraction</button>
+                <button class="btn-ui" data-op="*">Multiplication</button>
+                <button class="btn-ui" data-op="/">Division</button>
+            </div>
+        </div>
+
+        <div class="option-group">
+            <span class="option-label">Difficulty</span>
+            <div id="math-diff-btns">
+                <button class="btn-ui active" data-diff="easy">Easy</button>
+                <button class="btn-ui" data-diff="medium">Medium</button>
+                <button class="btn-ui" data-diff="hard">Hard</button>
+                <button class="btn-ui" data-diff="insane">Insane</button>
+                <button class="btn-ui" data-diff="extreme">Extreme</button>
+            </div>
+        </div>
+
+        <button class="btn-ui" id="start-math-btn" style="width: 100%; background: var(--neon-pink); color: black; margin-top: 20px; font-weight: 900;">START DASH</button>
+    </div>
+
     <!-- Game Over Screen -->
     <div id="game-over-screen" class="screen hidden">
         <h2 id="go-title" style="color: var(--neon-pink); margin: 0; letter-spacing: 5px;">CRASHED</h2>
@@ -428,6 +528,7 @@
         <div style="position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%;">
             <div id="math-problem" style="font-size: 5rem; font-weight: 900;">? + ?</div>
             <input type="number" id="math-input" placeholder="?" style="background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); color: white; font-size: 3rem; text-align: center; width: 220px; border-radius: 20px; margin-top: 30px; outline: none;">
+            <div style="font-size: 0.8rem; opacity: 0.6; margin-top: 10px;">Press ENTER to submit</div>
         </div>
     </div>
 
@@ -439,6 +540,7 @@
             </div>
             <div id="big-cookie">🍪</div>
         </div>
+        <div class="clicker-shop" id="shop-container"></div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -449,7 +551,7 @@
             ctx: null, gainNode: null, currentTrack: 'off',
             init() { if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.gainNode = this.ctx.createGain(); this.gainNode.gain.value = 0.3; this.gainNode.connect(this.ctx.destination); } },
             playProceduralTrack(type) { this.init(); this.currentTrack = type; document.getElementById('music-menu-btn').innerText = `🎵 Track: ${type.toUpperCase()}`; },
-            triggerNote(freq, vol, duration) { if(!this.ctx) return; const osc = this.ctx.createOscillator(); const g = this.ctx.createGain(); osc.frequency.setValueAtTime(freq, this.ctx.currentTime); g.gain.setValueAtTime(vol * 0.3, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration); osc.connect(g); g.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration); }
+            triggerNote(freq, vol, duration, type='sine') { if(!this.ctx) return; const osc = this.ctx.createOscillator(); const g = this.ctx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime); g.gain.setValueAtTime(vol * 0.3, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration); osc.connect(g); g.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration); }
         };
 
         // --- BACKGROUND ---
@@ -529,13 +631,97 @@
             document.getElementById('go-title').innerText = title;
             document.getElementById('go-score').innerText = finalScore;
             document.getElementById('game-over-screen').classList.remove('hidden');
+            if(activeGame === 'math') document.getElementById('math-input').blur();
         }
 
         // --- MATH DASH ---
-        let mathEnergy = 100, mathAns = 0;
-        function startMath() { isPlaying = true; score = 0; mathEnergy = 100; genMath(); document.getElementById('math-input').focus(); }
-        function genMath() { let n1 = Math.floor(Math.random()*20), n2 = Math.floor(Math.random()*20); mathAns = n1 + n2; document.getElementById('math-problem').innerText = `${n1} + ${n2}`; }
-        document.getElementById('math-input').oninput = (e) => { if(parseInt(e.target.value) === mathAns) { score++; mathEnergy = Math.min(100, mathEnergy + 15); e.target.value = ''; genMath(); MusicEngine.triggerNote(800, 0.1, 0.1); } };
+        let mathEnergy = 100, mathAns = 0, mathConfig = { op: '+', diff: 'easy' };
+        
+        document.querySelectorAll('#math-op-btns .btn-ui').forEach(btn => {
+            btn.onclick = () => { document.querySelectorAll('#math-op-btns .btn-ui').forEach(b => b.classList.remove('active')); btn.classList.add('active'); mathConfig.op = btn.dataset.op; }
+        });
+        document.querySelectorAll('#math-diff-btns .btn-ui').forEach(btn => {
+            btn.onclick = () => { document.querySelectorAll('#math-diff-btns .btn-ui').forEach(b => b.classList.remove('active')); btn.classList.add('active'); mathConfig.diff = btn.dataset.diff; }
+        });
+
+        document.getElementById('start-math-btn').onclick = () => switchGame('math', mathConfig);
+
+        function startMath(config) {
+            mathConfig = config; mathEnergy = 100; isPlaying = true; score = 0;
+            genMath(); const input = document.getElementById('math-input'); input.value = '';
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function genMath() {
+            let n1, n2, symbol; const diff = mathConfig.diff; const op = mathConfig.op;
+            
+            // Define ranges based on difficulty
+            let maxVal = 10;
+            if(diff === 'medium') maxVal = 25;
+            if(diff === 'hard') maxVal = 100;
+            if(diff === 'insane') maxVal = 500;
+            if(diff === 'extreme') maxVal = 1000;
+
+            if (op === '+') { 
+                n1 = Math.floor(Math.random() * maxVal); 
+                n2 = Math.floor(Math.random() * maxVal); 
+                mathAns = n1 + n2; symbol = '+'; 
+            } 
+            else if (op === '-') { 
+                n1 = Math.floor(Math.random() * maxVal) + (maxVal/2); 
+                n2 = Math.floor(Math.random() * n1); 
+                mathAns = n1 - n2; symbol = '-'; 
+            } 
+            else if (op === '*') { 
+                let mRange = diff === 'easy' ? 10 : (diff === 'medium' ? 15 : (diff === 'hard' ? 25 : (diff === 'insane' ? 50 : 100)));
+                n1 = Math.floor(Math.random() * mRange); 
+                n2 = Math.floor(Math.random() * (diff === 'easy' ? 10 : 12)); 
+                mathAns = n1 * n2; symbol = '×'; 
+            }
+            else if (op === '/') {
+                // Ensure whole number division
+                let divisorMax = diff === 'easy' ? 5 : (diff === 'medium' ? 10 : (diff === 'hard' ? 12 : (diff === 'insane' ? 20 : 25)));
+                n2 = Math.floor(Math.random() * (divisorMax - 2)) + 2; // Divisor > 1
+                let ans = Math.floor(Math.random() * (diff === 'easy' ? 5 : (diff === 'medium' ? 10 : (diff === 'hard' ? 15 : (diff === 'insane' ? 20 : 50))))) + 1; 
+                n1 = ans * n2;
+                mathAns = ans; symbol = '÷';
+            }
+            document.getElementById('math-problem').innerText = `${n1} ${symbol} ${n2}`;
+        }
+
+        function handleCorrectMath() {
+            score++;
+            let gain = 15;
+            if(mathConfig.diff === 'hard') gain = 10;
+            if(mathConfig.diff === 'insane') gain = 8;
+            if(mathConfig.diff === 'extreme') gain = 5;
+            
+            mathEnergy = Math.min(100, mathEnergy + gain);
+            document.getElementById('math-input').value = '';
+            genMath();
+            MusicEngine.triggerNote(800, 0.1, 0.1);
+        }
+
+        function handleWrongMath() {
+            mathEnergy -= 15;
+            const input = document.getElementById('math-input');
+            input.value = '';
+            input.classList.add('shake');
+            setTimeout(() => input.classList.remove('shake'), 200);
+            MusicEngine.triggerNote(150, 0.1, 0.2, 'sawtooth');
+        }
+
+        const mathInput = document.getElementById('math-input');
+        mathInput.oninput = (e) => {
+            if(parseInt(e.target.value) === mathAns) handleCorrectMath();
+        };
+        
+        mathInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (parseInt(mathInput.value) === mathAns) handleCorrectMath();
+                else handleWrongMath();
+            }
+        });
 
         // --- CLICKER ---
         let cookies = 0;
@@ -547,18 +733,18 @@
         const mainMenu = document.getElementById('main-menu');
         const backBtn = document.getElementById('back-to-menu');
         document.getElementById('card-wave').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('wave-level-select').classList.remove('hidden'); backBtn.style.display='block'; renderWaveLevels(); };
-        document.getElementById('card-math').onclick = () => switchGame('math');
+        document.getElementById('card-math').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('math-select-screen').classList.remove('hidden'); backBtn.style.display='block'; };
         document.getElementById('card-clicker').onclick = () => switchGame('clicker');
         document.getElementById('close-level-select').onclick = () => { document.getElementById('wave-level-select').classList.add('hidden'); mainMenu.classList.remove('hidden'); backBtn.style.display='none'; };
-        backBtn.onclick = () => { activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen').forEach(el=>el.classList.add('hidden')); };
+        backBtn.onclick = () => { activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen').forEach(el=>el.classList.add('hidden')); document.getElementById('math-input').blur(); };
 
         function switchGame(mode, data) {
             activeGame = mode; mainMenu.classList.add('hidden'); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`${mode}-ui`).classList.remove('hidden'); backBtn.style.display = 'block';
-            if(mode === 'wave') startWave(data); if(mode === 'math') startMath(); if(mode === 'clicker') startClicker();
+            if(mode === 'wave') startWave(data); if(mode === 'math') startMath(data); if(mode === 'clicker') startClicker();
         }
 
-        document.getElementById('retry-btn').onclick = () => { document.getElementById('game-over-screen').classList.add('hidden'); if(activeGame==='wave') startWave(waveLvl); else startMath(); };
+        document.getElementById('retry-btn').onclick = () => { document.getElementById('game-over-screen').classList.add('hidden'); if(activeGame==='wave') startWave(waveLvl); else startMath(mathConfig); };
         document.getElementById('quit-btn').onclick = backBtn.onclick;
 
         // --- MAIN LOOP ---
@@ -578,7 +764,15 @@
                     });
                     if(player.x > walls[0].x + 400) { walls.shift(); spawnWall(walls[walls.length-1].x+600); score++; document.getElementById('wave-score-container').innerText = score; }
                 }
-                if (activeGame === 'math') { mathEnergy -= 0.15; if (mathEnergy <= 0) triggerGameOver(score, "TIME OUT"); }
+                if (activeGame === 'math') { 
+                    let drain = 0.15;
+                    if(mathConfig.diff === 'medium') drain = 0.2;
+                    if(mathConfig.diff === 'hard') drain = 0.25;
+                    if(mathConfig.diff === 'insane') drain = 0.35;
+                    if(mathConfig.diff === 'extreme') drain = 0.5;
+                    mathEnergy -= drain; 
+                    if (mathEnergy <= 0) triggerGameOver(score, "TIME OUT"); 
+                }
             }
             ctx.clearRect(0,0,canvas.width, canvas.height);
             
@@ -642,7 +836,7 @@
                 ctx.restore();
             }
             
-            if (activeGame === 'math' && isPlaying) {
+            if (activeGame === 'math' && (isPlaying || !document.getElementById('game-over-screen').classList.contains('hidden'))) {
                 ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(canvas.width/2 - 100, 50, 200, 10);
                 ctx.fillStyle = '#ff007f'; ctx.fillRect(canvas.width/2 - 100, 50, (mathEnergy/100)*200, 10);
             }
