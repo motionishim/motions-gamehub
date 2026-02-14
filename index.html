@@ -284,13 +284,27 @@
         }
         .clicker-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
         .clicker-shop { width: 360px; padding: 30px; background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border-left: 1px solid var(--glass-border); overflow-y: auto; }
-        #big-cookie { width: 200px; height: 200px; background: radial-gradient(circle at 30% 30%, #ffcc33, #aa6600); border-radius: 50%; cursor: pointer; border: 8px solid rgba(255,255,255,0.9); box-shadow: 0 0 50px rgba(255, 170, 0, 0.4); display: flex; align-items: center; justify-content: center; font-size: 5rem; transition: 0.1s; }
+        #big-cookie { width: 200px; height: 200px; background: radial-gradient(circle at 30% 30%, #ffcc33, #aa6600); border-radius: 50%; cursor: pointer; border: 8px solid rgba(255,255,255,0.9); box-shadow: 0 0 50px rgba(255, 170, 0, 0.4); display: flex; align-items: center; justify-content: center; font-size: 5rem; transition: 0.1s; position: relative; }
         #big-cookie:active { transform: scale(0.9); }
         .stat-card { background: var(--glass); padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 30px; border: 1px solid var(--glass-border); width: 100%; max-width: 250px; }
 
+        .floating-text {
+            position: absolute;
+            color: var(--neon-orange);
+            font-weight: 900;
+            pointer-events: none;
+            animation: float-up 0.8s ease-out forwards;
+            z-index: 600;
+        }
+
+        @keyframes float-up {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+
         @media (max-width: 768px) {
-            .clicker-ui { flex-direction: column; }
-            .clicker-shop { width: 100%; border-left: none; border-top: 1px solid var(--glass-border); }
+            #clicker-ui { flex-direction: column; }
+            .clicker-shop { width: 100%; border-left: none; border-top: 1px solid var(--glass-border); flex: 1; }
         }
     </style>
 </head>
@@ -329,11 +343,10 @@
         </div>
     </div>
 
-    <!-- Wave Level Select (10 Levels / 3 Pages) -->
+    <!-- Wave Level Select -->
     <div id="wave-level-select" class="screen hidden">
         <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Select Level</h2>
         
-        <!-- Trail Color Picker -->
         <div class="trail-selector">
             <div class="trail-label">Custom Trail Color</div>
             <div class="color-options" id="color-options">
@@ -471,7 +484,7 @@
             mainMenu.classList.add('hidden');
             document.getElementById('wave-level-select').classList.remove('hidden');
             backBtn.style.display = 'block';
-            renderWaveLevels(0); // Start at page 1
+            renderWaveLevels(0);
         };
         document.getElementById('card-math').onclick = () => switchGame('math');
         document.getElementById('card-clicker').onclick = () => switchGame('clicker');
@@ -499,7 +512,7 @@
             document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui').forEach(el => el.classList.add('hidden'));
         };
 
-        // --- NEON WAVE LOGIC (10 Levels) ---
+        // --- NEON WAVE LOGIC ---
         let player = { x: 0, y: 0, trail: [], angle: 0 }, walls = [], waveLvl = null, score = 0;
         const WAVE_LEVELS = [
             { id: 1, speed: 5, gap: 360, color: '#00f2ff' },
@@ -521,31 +534,18 @@
             const dots = document.getElementById('pagination-dots');
             container.innerHTML = '';
             dots.innerHTML = '';
-
             const start = pageIndex * LEVELS_PER_PAGE;
             const end = Math.min(start + LEVELS_PER_PAGE, WAVE_LEVELS.length);
             const totalPages = Math.ceil(WAVE_LEVELS.length / LEVELS_PER_PAGE);
-
-            // Render Levels
             for(let i = start; i < end; i++) {
                 const lvl = WAVE_LEVELS[i];
                 const btn = document.createElement('button');
                 btn.className = 'btn-ui';
                 btn.style.borderLeft = `4px solid ${lvl.color}`;
-                btn.style.textAlign = 'left';
-                btn.style.paddingLeft = '20px';
-                btn.innerHTML = `
-                    <span style="font-weight:900; color: ${lvl.color}">LEVEL ${lvl.id}</span><br>
-                    <span style="font-size:0.6rem; opacity:0.6; letter-spacing:1px">SPD: ${lvl.speed} | GAP: ${lvl.gap}</span>
-                `;
-                btn.onclick = () => { 
-                    document.getElementById('wave-level-select').classList.add('hidden'); 
-                    switchGame('wave', lvl); 
-                };
+                btn.innerHTML = `<span style="font-weight:900; color: ${lvl.color}">LEVEL ${lvl.id}</span><br><span style="font-size:0.6rem; opacity:0.6">SPD: ${lvl.speed} | GAP: ${lvl.gap}</span>`;
+                btn.onclick = () => { document.getElementById('wave-level-select').classList.add('hidden'); switchGame('wave', lvl); };
                 container.appendChild(btn);
             }
-
-            // Render Dots
             for(let i = 0; i < totalPages; i++) {
                 const dot = document.createElement('div');
                 dot.className = `page-dot ${i === pageIndex ? 'active' : ''}`;
@@ -571,40 +571,47 @@
         // --- MATH DASH LOGIC ---
         let mathEnergy = 100, mathAns = 0;
         function startMath() { mathEnergy = 100; isPlaying = true; document.getElementById('math-over').classList.add('hidden'); genMath(); document.getElementById('math-input').value = ''; document.getElementById('math-input').focus(); }
-        function genMath() { 
-            const n1 = Math.floor(Math.random()*12)+1; 
-            const n2 = Math.floor(Math.random()*12)+1; 
-            mathAns = n1 + n2; 
-            document.getElementById('math-problem').innerText = `${n1} + ${n2}`; 
-        }
-        document.getElementById('math-input').oninput = (e) => { 
-            if(parseInt(e.target.value) === mathAns) { 
-                mathEnergy = Math.min(100, mathEnergy + 15); 
-                e.target.value = ''; genMath(); 
-                AudioEngine.playNote(800, 'sine', 0.1); 
-            }
-        };
+        function genMath() { const n1 = Math.floor(Math.random()*12)+1; const n2 = Math.floor(Math.random()*12)+1; mathAns = n1 + n2; document.getElementById('math-problem').innerText = `${n1} + ${n2}`; }
+        document.getElementById('math-input').oninput = (e) => { if(parseInt(e.target.value) === mathAns) { mathEnergy = Math.min(100, mathEnergy + 15); e.target.value = ''; genMath(); AudioEngine.playNote(800, 'sine', 0.1); } };
 
         // --- CLICKER LOGIC ---
         let cookies = 0, cps = 0, clickPower = 1;
         const items = [
-            { name: 'Auto-Clicker', cost: 15, cps: 1, owned: 0 },
-            { name: 'Cookie Chef', cost: 100, cps: 5, owned: 0 },
-            { name: 'Factory', cost: 500, cps: 25, owned: 0 },
-            { name: 'Quantum Baker', cost: 2000, cps: 100, owned: 0 }
+            { id: 'auto', name: 'Auto-Clicker', cost: 15, cps: 1, owned: 0 },
+            { id: 'chef', name: 'Cookie Chef', cost: 100, cps: 5, owned: 0 },
+            { id: 'factory', name: 'Factory', cost: 500, cps: 25, owned: 0 },
+            { id: 'bakery', name: 'Quantum Baker', cost: 2000, cps: 100, owned: 0 }
         ];
 
-        function startClicker() { isPlaying = true; renderShop(); }
-        document.getElementById('big-cookie').onclick = () => { cookies += clickPower; AudioEngine.playNote(400, 'sine', 0.05); updateClickerUI(); };
+        function startClicker() { isPlaying = true; updateClickerUI(); }
+        
+        document.getElementById('big-cookie').onclick = (e) => { 
+            cookies += clickPower; 
+            AudioEngine.playNote(400, 'sine', 0.05); 
+            spawnFloatingText(e.clientX, e.clientY, `+${clickPower}`);
+            updateClickerUI(); 
+        };
+
+        function spawnFloatingText(x, y, text) {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.innerText = text;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+
         function updateClickerUI() {
             document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
             document.getElementById('cps-val').innerText = cps.toFixed(1);
             renderShop();
         }
+
         function renderShop() {
             const shop = document.getElementById('shop-container');
             shop.innerHTML = '';
-            items.forEach((item, i) => {
+            items.forEach((item) => {
                 const btn = document.createElement('div');
                 btn.style.padding = '15px';
                 btn.style.background = cookies >= item.cost ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.02)';
@@ -614,8 +621,17 @@
                 btn.style.cursor = cookies >= item.cost ? 'pointer' : 'not-allowed';
                 btn.style.opacity = cookies >= item.cost ? '1' : '0.5';
                 btn.innerHTML = `<div style="display:flex; justify-content:space-between"><b>${item.name}</b> <span>${item.owned}</span></div>
-                                 <div style="font-size:0.7rem; color:var(--neon-green)">Cost: ${Math.floor(item.cost)}</div>`;
-                btn.onclick = () => { if(cookies >= item.cost) { cookies -= item.cost; item.owned++; item.cost *= 1.2; cps += item.cps; updateClickerUI(); }};
+                                 <div style="font-size:0.7rem; color:var(--neon-green)">Cost: ${Math.floor(item.cost)} | +${item.cps} CPS</div>`;
+                btn.onclick = () => { 
+                    if(cookies >= item.cost) { 
+                        cookies -= item.cost; 
+                        item.owned++; 
+                        item.cost *= 1.25; 
+                        cps += item.cps; 
+                        AudioEngine.playNote(600, 'sine', 0.1);
+                        updateClickerUI(); 
+                    }
+                };
                 shop.appendChild(btn);
             });
         }
@@ -630,7 +646,6 @@
                     player.angle = Math.atan2(pressing ? -6 : 6, waveLvl.speed);
                     player.trail.push({x: player.x, y: player.y});
                     if(player.trail.length > 25) player.trail.shift();
-
                     if(player.y < 0 || player.y > canvas.height) dieWave();
                     walls.forEach(w => {
                         if(player.x+10 > w.x && player.x-10 < w.x+w.w) {
@@ -640,7 +655,11 @@
                     if(player.x > walls[0].x + 300) { walls.shift(); spawnWall(walls[walls.length-1].x + 600); score++; document.getElementById('wave-score-container').innerText = score; }
                 }
                 if (activeGame === 'math') { mathEnergy -= 0.15; if(mathEnergy <= 0) { isPlaying = false; document.getElementById('math-over').classList.remove('hidden'); }}
-                if (activeGame === 'clicker') { cookies += cps/60; updateClickerUI(); }
+                if (activeGame === 'clicker') { 
+                    // Auto-Clicker logic: CPS added every frame
+                    cookies += cps / 60; 
+                    updateClickerUI(); 
+                }
             }
 
             ctx.clearRect(0,0,canvas.width, canvas.height);
@@ -651,16 +670,10 @@
                     ctx.shadowBlur = 15; ctx.shadowColor = waveLvl.color;
                     ctx.fillRect(w.x, 0, w.w, w.top); ctx.fillRect(w.x, w.bottom, w.w, canvas.height); 
                 });
-                
-                // Draw Trail with Glow
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = selectedTrailColor;
-                ctx.strokeStyle = selectedTrailColor; 
-                ctx.lineWidth = 4; 
-                ctx.beginPath();
+                ctx.shadowBlur = 15; ctx.shadowColor = selectedTrailColor;
+                ctx.strokeStyle = selectedTrailColor; ctx.lineWidth = 4; ctx.beginPath();
                 player.trail.forEach((p, i) => { if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); }); 
                 ctx.stroke();
-                
                 ctx.shadowBlur = 0;
                 ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
                 ctx.fillStyle = 'white'; ctx.beginPath(); ctx.moveTo(15,0); ctx.lineTo(-10,-10); ctx.lineTo(-10,10); ctx.fill();
