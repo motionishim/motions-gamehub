@@ -266,6 +266,40 @@
         #wave-ui, #math-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
         #math-input { pointer-events: auto; }
 
+        /* --- TRIAL SELECTION STYLING --- */
+        .trial-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .trial-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.05);
+        }
+        .trial-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: relative;
+        }
+        .trial-preview::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 60%; height: 4px;
+            background: white;
+            border-radius: 2px;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            box-shadow: 0 0 10px currentColor;
+        }
+
         @media (max-width: 768px) {
             .clicker-ui { flex-direction: column; }
             .clicker-shop { width: 100%; border-left: none; border-top: 1px solid var(--glass-border); }
@@ -307,11 +341,11 @@
         </div>
     </div>
 
-    <!-- Wave UI Level Selection (Starts Hidden) -->
+    <!-- Wave UI Level Selection -->
     <div id="wave-level-select" class="screen hidden">
-        <h2 style="color: var(--neon-blue); margin-top: 0;">SELECT TRIAL</h2>
-        <div class="level-grid" id="level-grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0;"></div>
-        <button class="action-btn" id="close-level-select" style="background: #222; width: 100%;">Close</button>
+        <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px;">CHOOSE YOUR TRAIL</h2>
+        <div class="level-grid" id="level-grid-container" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 25px 0;"></div>
+        <button class="action-btn" id="close-level-select" style="background: rgba(255,255,255,0.05); width: 100%; border: 1px solid var(--glass-border);">Back to Menu</button>
     </div>
 
     <div id="wave-ui" class="hidden">
@@ -385,7 +419,7 @@
         window.addEventListener('resize', initBG);
         initBG(); drawBG();
 
-        // --- CORE GAME ENGINE ---
+        // --- CORE ENGINE ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const backBtn = document.getElementById('back-to-menu');
@@ -402,7 +436,6 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Audio
         const AudioEngine = {
             ctx: null, isMuted: true,
             init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
@@ -423,7 +456,6 @@
         document.getElementById('card-wave').onclick = () => {
             mainMenu.classList.add('hidden');
             document.getElementById('wave-level-select').classList.remove('hidden');
-            backBtn.style.display = 'block';
             renderWaveLevels();
         };
         document.getElementById('card-math').onclick = () => switchGame('math');
@@ -432,7 +464,6 @@
         document.getElementById('close-level-select').onclick = () => {
             document.getElementById('wave-level-select').classList.add('hidden');
             mainMenu.classList.remove('hidden');
-            backBtn.style.display = 'none';
         };
 
         function switchGame(mode, data = null) {
@@ -455,24 +486,31 @@
         // --- NEON WAVE LOGIC ---
         let player = { x: 0, y: 0, trail: [], angle: 0 }, walls = [], waveLvl = null, score = 0;
         const WAVE_LEVELS = [
-            { id: 1, speed: 5, gap: 360, color: '#00f2ff' },
-            { id: 2, speed: 6, gap: 340, color: '#00ff88' },
-            { id: 3, speed: 7, gap: 320, color: '#ff007f' },
-            { id: 4, speed: 8, gap: 300, color: '#ffaa00' },
-            { id: 5, speed: 9, gap: 280, color: '#bc13fe' },
-            { id: 6, speed: 10, gap: 260, color: '#ff0000' }
+            { id: 1, speed: 5, gap: 360, color: '#00f2ff', name: 'CYAN' },
+            { id: 2, speed: 6, gap: 340, color: '#00ff88', name: 'MINT' },
+            { id: 3, speed: 7, gap: 320, color: '#ff007f', name: 'ROSE' },
+            { id: 4, speed: 8, gap: 300, color: '#ffaa00', name: 'AMBER' },
+            { id: 5, speed: 9, gap: 280, color: '#bc13fe', name: 'VOID' },
+            { id: 6, speed: 10, gap: 260, color: '#ff4444', name: 'CORE' }
         ];
 
         function renderWaveLevels() {
             const container = document.getElementById('level-grid-container');
             container.innerHTML = '';
             WAVE_LEVELS.forEach(lvl => {
-                const btn = document.createElement('button');
-                btn.className = 'btn-ui';
-                btn.style.borderLeft = `4px solid ${lvl.color}`;
-                btn.innerHTML = `Lvl ${lvl.id}<br><span style="font-size:0.6rem;opacity:0.6">Speed ${lvl.speed}</span>`;
-                btn.onclick = () => { document.getElementById('wave-level-select').classList.add('hidden'); switchGame('wave', lvl); };
-                container.appendChild(btn);
+                const card = document.createElement('div');
+                card.className = 'trial-card';
+                card.style.borderColor = `${lvl.color}33`;
+                card.innerHTML = `
+                    <div class="trial-preview" style="background: ${lvl.color}22; color: ${lvl.color}; border: 1px solid ${lvl.color}"></div>
+                    <div style="font-weight: 800; font-size: 0.7rem; color: ${lvl.color}">${lvl.name}</div>
+                    <div style="font-size: 0.6rem; opacity: 0.5;">SPEED ${lvl.speed}</div>
+                `;
+                card.onclick = () => { 
+                    document.getElementById('wave-level-select').classList.add('hidden'); 
+                    switchGame('wave', lvl); 
+                };
+                container.appendChild(card);
             });
         }
 
@@ -482,6 +520,7 @@
             walls = []; for(let i=0; i<3; i++) spawnWall(800 + i * 600);
             document.getElementById('wave-ui').classList.remove('hidden');
             document.getElementById('wave-over').classList.add('hidden');
+            document.getElementById('wave-score-container').innerText = '0';
         }
 
         function spawnWall(x) {
@@ -558,7 +597,11 @@
                             if(player.y-10 < w.top || player.y+10 > w.bottom) dieWave();
                         }
                     });
-                    if(player.x > walls[0].x + 300) { walls.shift(); spawnWall(walls[walls.length-1].x + 600); score++; document.getElementById('wave-score-container').innerText = score; }
+                    if(player.x > walls[0].x + 300) { 
+                        walls.shift(); spawnWall(walls[walls.length-1].x + 600); 
+                        score++; 
+                        document.getElementById('wave-score-container').innerText = score; 
+                    }
                 }
                 if (activeGame === 'math') { mathEnergy -= 0.15; if(mathEnergy <= 0) { isPlaying = false; document.getElementById('math-over').classList.remove('hidden'); }}
                 if (activeGame === 'clicker') { cookies += cps/60; updateClickerUI(); }
