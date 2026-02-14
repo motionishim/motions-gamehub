@@ -676,6 +676,7 @@
         let bikeDistance = 0;
         let cityBuildings = [];
         let skyline = [];
+        let cityTrees = [];
 
         function startBike() {
             bike = { x: 200, y: canvas.height - 150, dy: 0, angle: 0, wheelie: 0, type: selectedBikeType };
@@ -683,141 +684,130 @@
             bikeDistance = 0;
             cityBuildings = [];
             skyline = [];
+            cityTrees = [];
             
-            // Generate Skyline (Background)
-            for(let i=0; i<15; i++) {
-                skyline.push({ x: i * 150, w: 100 + Math.random()*50, h: 200 + Math.random()*200 });
-            }
+            // Skyline
+            for(let i=0; i<20; i++) skyline.push({ x: i * 200, w: 150 + Math.random()*100, h: 200 + Math.random()*300 });
+            // Foreground Buildings
+            for(let i=0; i<25; i++) createBuilding(i * 350);
+            // Trees
+            for(let i=0; i<30; i++) cityTrees.push({ x: i * 200 + Math.random()*100, h: 60 + Math.random()*40 });
 
-            // Generate City (Foreground)
-            for(let i=0; i<20; i++) {
-                createBuilding(i * 300);
-            }
             document.getElementById('wheelie-meter').classList.remove('hidden');
             isPlaying = true;
         }
 
         function createBuilding(x) {
-            let h = 150 + Math.random() * 200;
-            let w = 150 + Math.random() * 100;
-            // Generate Windows
+            let h = 150 + Math.random() * 250;
+            let w = 200 + Math.random() * 100;
             let windows = [];
-            for(let wx=10; wx<w-20; wx+=30) {
-                for(let wy=10; wy<h-20; wy+=40) {
-                    if(Math.random() > 0.3) windows.push({x: wx, y: wy});
+            for(let wx=20; wx<w-20; wx+=30) {
+                for(let wy=20; wy<h-20; wy+=40) {
+                    if(Math.random() > 0.4) windows.push({x: wx, y: wy});
                 }
             }
             cityBuildings.push({ x, w, h, windows });
         }
 
         function updateBike() {
-            let speed = bike.type === 'surron' ? 10 : 12; // Dirt bike is faster
-            let wheelieSpeed = bike.type === 'surron' ? 0.15 : 0.08; // Surron pops up faster
-            
+            let speed = bike.type === 'surron' ? 12 : 14; 
+            let wheelieSpeed = bike.type === 'surron' ? 0.15 : 0.08; 
             bikeDistance += speed/10;
             
-            let targetAngle = 0;
-            if (keys['Shift']) {
-                targetAngle = -0.7; // Sweet spot
-            } else {
-                targetAngle = 0;
-            }
-            
+            let targetAngle = keys['Shift'] ? -0.7 : 0;
             bike.angle += (targetAngle - bike.angle) * wheelieSpeed;
             
-            // CRASH LOGIC: Past 115 degrees approx -2.0 radians. Let's make it -1.6 (just past 90)
-            if (bike.angle < -1.6) {
-                triggerGameOver(Math.floor(bikeScore), "LOOPED OUT!");
-            }
+            // LOOP OUT LOGIC - Approx 115 degrees = -2.0 radians from flat
+            if (bike.angle < -2.0) triggerGameOver(Math.floor(bikeScore), "LOOPED OUT!");
 
-            // Scoring
-            if (bike.angle < -0.4 && bike.angle > -1.5) {
+            if (bike.angle < -0.4 && bike.angle > -1.9) {
                 bikeScore += 2;
-                document.getElementById('wheelie-bar').style.width = `${Math.min(100, (Math.abs(bike.angle)-0.4)*100)}%`;
+                document.getElementById('wheelie-bar').style.width = `${Math.min(100, (Math.abs(bike.angle)-0.4)*80)}%`;
             } else {
                 bikeScore += 0.5;
                 document.getElementById('wheelie-bar').style.width = '0%';
             }
 
-            // Scroll Skyline (Slow)
+            // Scroll Parallax Layers
             skyline.forEach(b => b.x -= speed * 0.2);
-            if (skyline[0].x < -200) {
-                skyline.shift();
-                skyline.push({ x: skyline[skyline.length-1].x + 150, w: 100 + Math.random()*50, h: 200 + Math.random()*200 });
-            }
+            if (skyline[0].x < -400) { skyline.shift(); skyline.push({ x: skyline[skyline.length-1].x + 200, w: 150 + Math.random()*100, h: 200 + Math.random()*300 }); }
 
-            // Scroll City (Fast)
             cityBuildings.forEach(b => b.x -= speed);
-            if (cityBuildings[0].x < -300) {
-                cityBuildings.shift();
-                createBuilding(cityBuildings[cityBuildings.length-1].x + 300);
-            }
+            if (cityBuildings[0].x < -400) { cityBuildings.shift(); createBuilding(cityBuildings[cityBuildings.length-1].x + 350); }
+
+            cityTrees.forEach(t => t.x -= speed * 1.2); // Trees move faster (foreground)
+            if (cityTrees[0].x < -100) { cityTrees.shift(); cityTrees.push({ x: cityTrees[cityTrees.length-1].x + 150 + Math.random()*200, h: 60 + Math.random()*40 }); }
 
             document.getElementById('bike-dist').innerText = `${Math.floor(bikeDistance)} m`;
             document.getElementById('bike-score').innerText = `${Math.floor(bikeScore)} pts`;
         }
 
         function drawBikeGame() {
-            ctx.fillStyle = '#020205';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Sky
+            let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, "#020205"); grad.addColorStop(1, "#1a1a4a");
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Skyline
-            ctx.fillStyle = '#101030';
+            // Skyline (Far)
+            ctx.fillStyle = '#050515';
             skyline.forEach(b => ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h));
 
-            // Buildings
+            // Buildings (Mid)
             cityBuildings.forEach(b => {
-                ctx.fillStyle = '#050510';
-                ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h);
-                ctx.strokeStyle = '#222';
-                ctx.strokeRect(b.x, canvas.height - b.h, b.w, b.h);
-                
-                // Windows
-                ctx.fillStyle = 'rgba(255, 255, 100, 0.1)';
-                b.windows.forEach(w => {
-                    ctx.fillRect(b.x + w.x, canvas.height - b.h + w.y, 15, 25);
-                });
+                ctx.fillStyle = '#0a0a20'; ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h);
+                ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.strokeRect(b.x, canvas.height - b.h, b.w, b.h);
+                // Glowing Windows
+                ctx.fillStyle = 'rgba(255, 255, 100, 0.4)'; ctx.shadowBlur = 5; ctx.shadowColor = 'yellow';
+                b.windows.forEach(w => ctx.fillRect(b.x + w.x, canvas.height - b.h + w.y, 10, 20));
+                ctx.shadowBlur = 0;
             });
 
-            // Ground
-            ctx.fillStyle = '#111';
-            ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
-            
-            // Moving Road Lines
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 4;
-            ctx.setLineDash([40, 40]);
-            ctx.lineDashOffset = -bikeDistance * 10;
-            ctx.beginPath();
-            ctx.moveTo(0, canvas.height - 40);
-            ctx.lineTo(canvas.width, canvas.height - 40);
-            ctx.stroke();
-            ctx.setLineDash([]);
+            // Road
+            ctx.fillStyle = '#151515'; ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.setLineDash([40, 60]); ctx.lineDashOffset = -bikeDistance * 10;
+            ctx.beginPath(); ctx.moveTo(0, canvas.height - 40); ctx.lineTo(canvas.width, canvas.height - 40); ctx.stroke(); ctx.setLineDash([]);
+
+            // Trees (Foreground)
+            cityTrees.forEach(t => {
+                let y = canvas.height - 100;
+                ctx.fillStyle = '#0d0d0d'; ctx.fillRect(t.x + 10, y - t.h, 10, t.h); // Trunk
+                ctx.fillStyle = '#003300'; ctx.beginPath(); ctx.arc(t.x + 15, y - t.h, 30, 0, Math.PI*2); ctx.fill(); // Leaves
+            });
 
             // Draw Bike
-            ctx.save();
-            ctx.translate(bike.x, canvas.height - 100);
-            ctx.rotate(bike.angle);
-
-            ctx.strokeStyle = bike.type === 'surron' ? '#00f2ff' : '#ff4d4d';
-            ctx.lineWidth = 4;
+            ctx.save(); ctx.translate(bike.x, canvas.height - 100); ctx.rotate(bike.angle);
+            
+            ctx.shadowBlur = 10; ctx.shadowColor = bike.type === 'surron' ? '#00f2ff' : '#ff4d4d';
+            ctx.strokeStyle = bike.type === 'surron' ? '#00f2ff' : '#ff4d4d'; ctx.lineWidth = 4;
             
             // Wheels
-            ctx.beginPath(); ctx.arc(0, -18, 18, 0, Math.PI*2); ctx.stroke();
-            ctx.beginPath(); ctx.arc(60, -18, 18, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, -18, 18, 0, Math.PI*2); ctx.stroke(); // Back
+            ctx.beginPath(); ctx.arc(65, -18, 18, 0, Math.PI*2); ctx.stroke(); // Front
 
-            // Body
-            ctx.beginPath();
-            ctx.moveTo(0, -18); ctx.lineTo(30, -50); ctx.lineTo(60, -18);
-            ctx.moveTo(30, -50); ctx.lineTo(50, -50);
-            ctx.stroke();
+            // Frame
+            if (bike.type === 'surron') {
+                // X Frame
+                ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(35, -55); ctx.lineTo(65, -18);
+                ctx.moveTo(35, -55); ctx.lineTo(20, -55); // Seat
+                ctx.moveTo(35, -55); ctx.lineTo(50, -70); // Handlebars
+                ctx.stroke();
+                // Battery
+                ctx.fillStyle = '#222'; ctx.fillRect(25, -45, 15, 20);
+            } else {
+                // Dirt Bike Body
+                ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(25, -50); ctx.lineTo(65, -18);
+                ctx.moveTo(25, -50); ctx.lineTo(50, -50); // Seat/Tank
+                ctx.lineTo(55, -65); // Bars
+                ctx.stroke();
+                ctx.fillStyle = '#333'; ctx.fillRect(25, -45, 20, 15); // Engine
+            }
 
             // Rider
-            ctx.strokeStyle = 'white';
-            ctx.beginPath();
-            ctx.moveTo(30, -50); ctx.lineTo(30, -80);
-            ctx.moveTo(30, -70); ctx.lineTo(50, -50);
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(25, -50); ctx.lineTo(35, -85); // Body
+            ctx.moveTo(35, -85); ctx.lineTo(45, -65); // Arms
             ctx.stroke();
+            ctx.beginPath(); ctx.arc(35, -95, 8, 0, Math.PI*2); ctx.fillStyle='white'; ctx.fill(); // Head
 
             ctx.restore();
         }
