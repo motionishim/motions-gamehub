@@ -201,6 +201,36 @@
             min-height: 200px;
         }
 
+        /* Trail Color Picker */
+        .trail-selector {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+        }
+        .trail-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            color: #aaa;
+        }
+        .color-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: 0.2s;
+        }
+        .color-dot:hover { transform: scale(1.2); }
+        .color-dot.active { border-color: white; transform: scale(1.2); box-shadow: 0 0 15px currentColor; }
+
         .pagination {
             display: flex;
             justify-content: center;
@@ -301,7 +331,21 @@
 
     <!-- Wave Level Select (10 Levels / 3 Pages) -->
     <div id="wave-level-select" class="screen hidden">
-        <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Select Trial</h2>
+        <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Select Level</h2>
+        
+        <!-- Trail Color Picker -->
+        <div class="trail-selector">
+            <div class="trail-label">Custom Trail Color</div>
+            <div class="color-options" id="color-options">
+                <div class="color-dot active" data-color="#ffffff" style="background: #ffffff; color: #ffffff;"></div>
+                <div class="color-dot" data-color="#00f2ff" style="background: var(--neon-blue); color: var(--neon-blue);"></div>
+                <div class="color-dot" data-color="#ff007f" style="background: var(--neon-pink); color: var(--neon-pink);"></div>
+                <div class="color-dot" data-color="#00ff88" style="background: var(--neon-green); color: var(--neon-green);"></div>
+                <div class="color-dot" data-color="#ffaa00" style="background: var(--neon-orange); color: var(--neon-orange);"></div>
+                <div class="color-dot" data-color="#bc13fe" style="background: var(--neon-purple); color: var(--neon-purple);"></div>
+            </div>
+        </div>
+
         <div class="level-grid" id="level-grid-container"></div>
         <div class="pagination" id="pagination-dots"></div>
         <button class="action-btn" id="close-level-select" style="background: rgba(255,255,255,0.05); width: 100%; border: 1px solid var(--glass-border);">Back to Hub</button>
@@ -387,6 +431,7 @@
         let activeGame = null;
         let isPlaying = false;
         let keys = {};
+        let selectedTrailColor = '#ffffff';
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -411,6 +456,15 @@
             }
         };
         document.getElementById('audio-toggle').onclick = () => AudioEngine.toggleMute();
+
+        // --- TRAIL COLOR PICKER ---
+        document.querySelectorAll('.color-dot').forEach(dot => {
+            dot.onclick = () => {
+                document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                selectedTrailColor = dot.getAttribute('data-color');
+            };
+        });
 
         // --- NAVIGATION ---
         document.getElementById('card-wave').onclick = () => {
@@ -481,7 +535,7 @@
                 btn.style.textAlign = 'left';
                 btn.style.paddingLeft = '20px';
                 btn.innerHTML = `
-                    <span style="font-weight:900; color: ${lvl.color}">TRIAL ${lvl.id}</span><br>
+                    <span style="font-weight:900; color: ${lvl.color}">LEVEL ${lvl.id}</span><br>
                     <span style="font-size:0.6rem; opacity:0.6; letter-spacing:1px">SPD: ${lvl.speed} | GAP: ${lvl.gap}</span>
                 `;
                 btn.onclick = () => { 
@@ -597,9 +651,17 @@
                     ctx.shadowBlur = 15; ctx.shadowColor = waveLvl.color;
                     ctx.fillRect(w.x, 0, w.w, w.top); ctx.fillRect(w.x, w.bottom, w.w, canvas.height); 
                 });
+                
+                // Draw Trail with Glow
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = selectedTrailColor;
+                ctx.strokeStyle = selectedTrailColor; 
+                ctx.lineWidth = 4; 
+                ctx.beginPath();
+                player.trail.forEach((p, i) => { if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); }); 
+                ctx.stroke();
+                
                 ctx.shadowBlur = 0;
-                ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.beginPath();
-                player.trail.forEach((p, i) => { if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); }); ctx.stroke();
                 ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
                 ctx.fillStyle = 'white'; ctx.beginPath(); ctx.moveTo(15,0); ctx.lineTo(-10,-10); ctx.lineTo(-10,10); ctx.fill();
                 ctx.restore(); ctx.restore();
