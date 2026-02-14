@@ -11,6 +11,7 @@
             --neon-green: #00ff88;
             --neon-orange: #ffaa00;
             --neon-purple: #bc13fe;
+            --neon-yellow: #faff00;
             --bg-dark: #02020a;
             --glass: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
@@ -142,6 +143,9 @@
         
         .game-card.clicker::before { background: var(--neon-orange); }
         .game-card.clicker:hover { border-color: var(--neon-orange); box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(255, 170, 0, 0.2); }
+
+        .game-card.bike::before { background: var(--neon-yellow); }
+        .game-card.bike:hover { border-color: var(--neon-yellow); box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(250, 255, 0, 0.2); }
 
         .game-card h2 { font-size: 1.3rem; margin: 15px 0 10px 0; font-weight: 800; letter-spacing: 1px; }
         .game-card p { font-size: 0.85rem; color: #aaa; line-height: 1.4; }
@@ -322,14 +326,49 @@
 
         @media (max-width: 850px) {
             #clicker-ui { flex-direction: column; overflow-y: auto; }
-            .clicker-shop { 
-                width: 100%; 
-                border-left: none; 
-                border-top: 1px solid var(--glass-border); 
-                height: 50%; 
-                min-height: 300px;
-            }
+            .clicker-shop { width: 100%; border-left: none; border-top: 1px solid var(--glass-border); height: 50%; min-height: 300px; }
             .clicker-main { height: 50%; min-height: 300px; padding: 20px; }
+        }
+
+        /* BIKE UI */
+        #bike-ui {
+            position: fixed;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+            z-index: 500;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-sizing: border-box;
+        }
+        .bike-hud-el {
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid var(--neon-yellow);
+            color: var(--neon-yellow);
+            font-weight: 900;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px rgba(250, 255, 0, 0.5);
+        }
+        .wheelie-meter {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .wheelie-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--neon-yellow);
+            transition: 0.1s;
         }
 
         /* Standard Game UIs */
@@ -426,6 +465,11 @@
                 <h2>COOKIE CRUNCH</h2>
                 <p>Build your empire from scratch.</p>
             </div>
+            <div class="game-card bike" id="card-bike">
+                <div style="font-size: 2.5rem;">🏍️</div>
+                <h2>SURRON CITY</h2>
+                <p>Wheelie through the city. Hold SHIFT to pull up.</p>
+            </div>
         </div>
     </div>
 
@@ -521,16 +565,6 @@
             <div class="stat-card">
                 <div id="cookie-count" style="font-size: 3rem; color: var(--neon-orange); font-weight: 900;">0</div>
                 <div style="font-size: 0.8rem; opacity: 0.6;">COOKIES</div>
-                <div style="display: flex; justify-content: space-around; margin-top: 15px; border-top: 1px solid var(--glass-border); padding-top: 10px;">
-                    <div>
-                        <div style="font-size: 0.6rem; opacity: 0.5;">PER SEC</div>
-                        <div id="cps-val" style="color: var(--neon-green); font-weight: 800;">0</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.6rem; opacity: 0.5;">PER CLICK</div>
-                        <div id="cpc-val" style="color: var(--neon-blue); font-weight: 800;">1</div>
-                    </div>
-                </div>
             </div>
             <div id="big-cookie">🍪</div>
         </div>
@@ -542,6 +576,12 @@
             <div id="shop-container"></div>
         </div>
     </div>
+
+    <div id="bike-ui" class="hidden">
+        <div class="bike-hud-el" id="bike-dist">0 m</div>
+        <div class="bike-hud-el" id="bike-score">0 pts</div>
+    </div>
+    <div id="wheelie-meter" class="wheelie-meter hidden"><div class="wheelie-bar" id="wheelie-bar"></div></div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -601,6 +641,127 @@
         let activeGame = null, isPlaying = false, keys = {};
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize); resize();
+
+        // --- SURRON BIKE GAME ---
+        let bike = { x: 100, y: 0, dy: 0, angle: 0, wheelie: 0 };
+        let bikeScore = 0;
+        let bikeDistance = 0;
+        let cityBuildings = [];
+
+        function startBike() {
+            bike = { x: 200, y: canvas.height - 150, dy: 0, angle: 0, wheelie: 0 };
+            bikeScore = 0;
+            bikeDistance = 0;
+            cityBuildings = [];
+            // Generate initial city
+            for(let i=0; i<20; i++) {
+                cityBuildings.push({ x: i * 100, w: 60 + Math.random()*40, h: 100 + Math.random()*300 });
+            }
+            document.getElementById('wheelie-meter').classList.remove('hidden');
+            isPlaying = true;
+        }
+
+        function updateBike() {
+            // Basic Physics
+            let speed = 8;
+            bikeDistance += speed/10;
+            
+            // Wheelie Logic
+            let targetAngle = 0;
+            if (keys['Shift']) {
+                targetAngle = -0.6; // Pull back
+            } else {
+                targetAngle = 0; // Drop down
+            }
+            
+            // Smooth rotation
+            bike.angle += (targetAngle - bike.angle) * 0.1;
+            
+            // Crash Logic (Too far back)
+            if (bike.angle < -1.2) {
+                triggerGameOver(Math.floor(bikeScore), "LOOPED OUT!");
+            }
+
+            // Scoring
+            if (bike.angle < -0.4) {
+                bikeScore += 2; // Wheelie bonus
+                document.getElementById('wheelie-bar').style.width = `${Math.min(100, Math.abs(bike.angle)*100)}%`;
+                document.getElementById('wheelie-bar').style.background = '#faff00';
+            } else {
+                bikeScore += 0.5; // Normal driving
+                document.getElementById('wheelie-bar').style.width = '0%';
+            }
+
+            // City Scroll
+            cityBuildings.forEach(b => b.x -= speed);
+            if (cityBuildings[0].x < -100) {
+                cityBuildings.shift();
+                let lastX = cityBuildings[cityBuildings.length-1].x;
+                cityBuildings.push({ x: lastX + 100, w: 60 + Math.random()*40, h: 100 + Math.random()*300 });
+            }
+
+            // Update UI
+            document.getElementById('bike-dist').innerText = `${Math.floor(bikeDistance)} m`;
+            document.getElementById('bike-score').innerText = `${Math.floor(bikeScore)} pts`;
+        }
+
+        function drawBikeGame() {
+            // Draw City Background
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw Buildings (Parallax)
+            ctx.fillStyle = 'rgba(0, 242, 255, 0.1)';
+            cityBuildings.forEach(b => {
+                ctx.fillRect(b.x, canvas.height - b.h, b.w, b.h);
+            });
+
+            // Draw Ground
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+            ctx.strokeStyle = '#faff00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 100);
+            ctx.lineTo(canvas.width, canvas.height - 100);
+            ctx.stroke();
+
+            // Draw Surron Bike (Vector Style)
+            ctx.save();
+            ctx.translate(bike.x, canvas.height - 100); // Pivot at back wheel
+            ctx.rotate(bike.angle); // Rotate based on wheelie
+
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            
+            // Wheels
+            ctx.beginPath(); ctx.arc(0, -15, 15, 0, Math.PI*2); ctx.stroke(); // Back Wheel (at 0,0 relative)
+            ctx.beginPath(); ctx.arc(55, -15, 15, 0, Math.PI*2); ctx.stroke(); // Front Wheel
+
+            // Frame (X shape)
+            ctx.beginPath();
+            ctx.moveTo(0, -15);
+            ctx.lineTo(25, -45); // Seat post
+            ctx.lineTo(55, -15); // Fork bottom
+            ctx.moveTo(25, -45);
+            ctx.lineTo(45, -45); // Handlebars
+            ctx.stroke();
+
+            // Rider (Stick figure)
+            ctx.beginPath();
+            ctx.moveTo(25, -45); // Hips
+            ctx.lineTo(25, -70); // Head
+            ctx.moveTo(25, -55); 
+            ctx.lineTo(40, -45); // Arms
+            ctx.stroke();
+
+            // Glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#faff00';
+            ctx.stroke();
+
+            ctx.restore();
+        }
 
         // --- NEON WAVE ENGINE ---
         let score = 0, player = { x: 0, y: 0, trail: [] }, walls = [], waveLvl = null;
@@ -694,28 +855,17 @@
             if(diff === 'insane') maxVal = 500;
             if(diff === 'extreme') maxVal = 1000;
 
-            if (op === '+') { 
-                n1 = Math.floor(Math.random() * maxVal); 
-                n2 = Math.floor(Math.random() * maxVal); 
-                mathAns = n1 + n2; symbol = '+'; 
-            } 
-            else if (op === '-') { 
-                n1 = Math.floor(Math.random() * maxVal) + (maxVal/2); 
-                n2 = Math.floor(Math.random() * n1); 
-                mathAns = n1 - n2; symbol = '-'; 
-            } 
+            if (op === '+') { n1 = Math.floor(Math.random() * maxVal); n2 = Math.floor(Math.random() * maxVal); mathAns = n1 + n2; symbol = '+'; } 
+            else if (op === '-') { n1 = Math.floor(Math.random() * maxVal) + (maxVal/2); n2 = Math.floor(Math.random() * n1); mathAns = n1 - n2; symbol = '-'; } 
             else if (op === '*') { 
                 let mRange = diff === 'easy' ? 10 : (diff === 'medium' ? 15 : (diff === 'hard' ? 25 : (diff === 'insane' ? 50 : 100)));
-                n1 = Math.floor(Math.random() * mRange); 
-                n2 = Math.floor(Math.random() * (diff === 'easy' ? 10 : 12)); 
-                mathAns = n1 * n2; symbol = '×'; 
+                n1 = Math.floor(Math.random() * mRange); n2 = Math.floor(Math.random() * (diff === 'easy' ? 10 : 12)); mathAns = n1 * n2; symbol = '×'; 
             }
             else if (op === '/') {
                 let divisorMax = diff === 'easy' ? 5 : (diff === 'medium' ? 10 : (diff === 'hard' ? 12 : (diff === 'insane' ? 20 : 25)));
                 n2 = Math.floor(Math.random() * (divisorMax - 2)) + 2; 
                 let ans = Math.floor(Math.random() * (diff === 'easy' ? 5 : (diff === 'medium' ? 10 : (diff === 'hard' ? 15 : (diff === 'insane' ? 20 : 50))))) + 1; 
-                n1 = ans * n2;
-                mathAns = ans; symbol = '÷';
+                n1 = ans * n2; mathAns = ans; symbol = '÷';
             }
             document.getElementById('math-problem').innerText = `${n1} ${symbol} ${n2}`;
         }
@@ -742,15 +892,8 @@
         }
 
         const mathInput = document.getElementById('math-input');
-        mathInput.oninput = (e) => {
-            if(parseInt(e.target.value) === mathAns) handleCorrectMath();
-        };
-        mathInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                if (parseInt(mathInput.value) === mathAns) handleCorrectMath();
-                else handleWrongMath();
-            }
-        });
+        mathInput.oninput = (e) => { if(parseInt(e.target.value) === mathAns) handleCorrectMath(); };
+        mathInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { if (parseInt(mathInput.value) === mathAns) handleCorrectMath(); else handleWrongMath(); } });
 
         // --- COOKIE CRUNCH ---
         let cookies = 0; let clickPower = 1; let cookiesPerSecond = 0;
@@ -822,12 +965,7 @@
                         <div class="item-owned">${item.owned}</div>
                     </div>
                 `;
-                
-                // Add click handler manually
-                div.addEventListener('click', () => {
-                    buyItem(index);
-                });
-                
+                div.addEventListener('click', () => { buyItem(index); });
                 container.appendChild(div);
             });
         }
@@ -837,17 +975,7 @@
             shopItems.forEach((item, index) => {
                 const el = document.getElementById(`shop-item-${index}`);
                 if (!el) return;
-                
-                // Update affordability class
-                if (cookies >= item.cost) {
-                    el.classList.add('affordable');
-                    el.classList.remove('locked');
-                } else {
-                    el.classList.remove('affordable');
-                    el.classList.add('locked');
-                }
-
-                // Update text values
+                if (cookies >= item.cost) { el.classList.add('affordable'); el.classList.remove('locked'); } else { el.classList.remove('affordable'); el.classList.add('locked'); }
                 el.querySelector('.item-cost').innerText = `Cost: ${Math.floor(item.cost).toLocaleString()}`;
                 el.querySelector('.item-owned').innerText = item.owned;
             });
@@ -901,16 +1029,22 @@
         document.getElementById('card-wave').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('wave-level-select').classList.remove('hidden'); backBtn.style.display='block'; renderWaveLevels(); };
         document.getElementById('card-math').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('math-select-screen').classList.remove('hidden'); backBtn.style.display='block'; };
         document.getElementById('card-clicker').onclick = () => switchGame('clicker');
+        document.getElementById('card-bike').onclick = () => switchGame('bike');
         document.getElementById('close-level-select').onclick = () => { document.getElementById('wave-level-select').classList.add('hidden'); mainMenu.classList.remove('hidden'); backBtn.style.display='none'; };
-        backBtn.onclick = () => { if(activeGame==='clicker') saveGame(); activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen').forEach(el=>el.classList.add('hidden')); document.getElementById('math-input').blur(); };
+        backBtn.onclick = () => { if(activeGame==='clicker') saveGame(); activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen, #bike-ui, #wheelie-meter').forEach(el=>el.classList.add('hidden')); document.getElementById('math-input').blur(); };
 
         function switchGame(mode, data) {
             activeGame = mode; mainMenu.classList.add('hidden'); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`${mode}-ui`).classList.remove('hidden'); backBtn.style.display = 'block';
-            if(mode === 'wave') startWave(data); if(mode === 'math') startMath(data); if(mode === 'clicker') startClicker();
+            if(mode === 'wave') startWave(data); if(mode === 'math') startMath(data); if(mode === 'clicker') startClicker(); if(mode === 'bike') startBike();
         }
 
-        document.getElementById('retry-btn').onclick = () => { document.getElementById('game-over-screen').classList.add('hidden'); if(activeGame==='wave') startWave(waveLvl); else startMath(mathConfig); };
+        document.getElementById('retry-btn').onclick = () => { 
+            document.getElementById('game-over-screen').classList.add('hidden'); 
+            if(activeGame==='wave') startWave(waveLvl); 
+            else if(activeGame === 'math') startMath(mathConfig);
+            else if(activeGame === 'bike') startBike();
+        };
         document.getElementById('quit-btn').onclick = backBtn.onclick;
 
         // --- MAIN LOOP ---
@@ -941,6 +1075,7 @@
                         updateShopState();
                     }
                 }
+                if (activeGame === 'bike') updateBike();
             }
             
             ctx.clearRect(0,0,canvas.width, canvas.height);
@@ -960,6 +1095,9 @@
                 ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(canvas.width/2 - 100, 50, 200, 10);
                 ctx.fillStyle = '#ff007f'; ctx.fillRect(canvas.width/2 - 100, 50, (mathEnergy/100)*200, 10);
             }
+
+            if (activeGame === 'bike') drawBikeGame();
+
             requestAnimationFrame(loop);
         }
 
