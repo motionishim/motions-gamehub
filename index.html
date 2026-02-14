@@ -193,6 +193,18 @@
         .music-item.playing { background: var(--neon-blue); color: black; font-weight: bold; }
         .music-item span { margin-right: 10px; }
 
+        /* --- LEVEL SELECTION PAGINATION --- */
+        .level-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .page-dots { display: flex; gap: 8px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+        .dot.active { background: var(--neon-blue); transform: scale(1.3); }
+
         #save-indicator { 
             position: fixed; 
             bottom: 20px; 
@@ -357,6 +369,17 @@
             from { transform: translate(-50%, -100%); }
             to { transform: translate(-50%, 0); }
         }
+
+        /* Game Over Screen */
+        #game-over-screen {
+            z-index: 2500;
+        }
+        .score-text {
+            font-size: 4rem;
+            font-weight: 900;
+            margin: 20px 0;
+            color: var(--neon-blue);
+        }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -413,8 +436,15 @@
     <!-- Wave Level Select -->
     <div id="wave-level-select" class="screen hidden">
         <h2 style="color: var(--neon-blue); margin-top: 0; letter-spacing: 4px; text-transform: uppercase;">Select Level</h2>
-        <div class="level-grid" id="level-grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;"></div>
-        <button class="btn-ui" id="close-level-select" style="width: 100%;">Back to Hub</button>
+        <div class="level-grid" id="level-grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; min-height: 200px;"></div>
+        
+        <div class="level-pagination">
+            <button class="btn-ui" id="prev-page" style="padding: 10px 15px;">←</button>
+            <div class="page-dots" id="page-dots"></div>
+            <button class="btn-ui" id="next-page" style="padding: 10px 15px;">→</button>
+        </div>
+
+        <button class="btn-ui" id="close-level-select" style="width: 100%; margin-top: 20px;">Back to Hub</button>
     </div>
 
     <!-- Math Select Screen -->
@@ -441,6 +471,16 @@
         </div>
 
         <button class="btn-ui" id="start-math-btn" style="width: 100%; background: var(--neon-pink); color: black; margin-top: 20px; font-weight: 900;">START DASH</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="screen hidden">
+        <h2 id="go-title" style="color: var(--neon-pink); margin: 0; letter-spacing: 5px;">GAME OVER</h2>
+        <div id="go-score" class="score-text">0</div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-ui" id="retry-btn" style="flex: 1; background: var(--neon-green); color: black;">Retry</button>
+            <button class="btn-ui" id="quit-btn" style="flex: 1;">Hub</button>
+        </div>
     </div>
 
     <!-- Game UIs -->
@@ -488,12 +528,7 @@
     <script>
         // --- MUSIC & AUDIO ENGINE ---
         const MusicEngine = {
-            ctx: null,
-            gainNode: null,
-            oscillator: null,
-            currentTrack: 'off',
-            isPlaying: false,
-
+            ctx: null, gainNode: null, currentTrack: 'off', isPlaying: false,
             init() {
                 if (!this.ctx) {
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -502,99 +537,34 @@
                     this.gainNode.connect(this.ctx.destination);
                 }
             },
-
             playProceduralTrack(type) {
-                this.stop();
-                if (type === 'off') {
-                    document.getElementById('music-menu-btn').innerText = '🎵 Music: Off';
-                    return;
-                }
-                this.init();
-                this.isPlaying = true;
-                this.currentTrack = type;
+                this.stop(); if (type === 'off') { document.getElementById('music-menu-btn').innerText = '🎵 Music: Off'; return; }
+                this.init(); this.isPlaying = true; this.currentTrack = type;
                 document.getElementById('music-menu-btn').innerText = `🎵 Track: ${type.toUpperCase()}`;
                 this.loopProcedural(type);
             },
-
-            // We generate different rhythms/scales based on the selection
             async loopProcedural(type) {
                 let step = 0;
                 while (this.isPlaying && this.currentTrack === type) {
-                    const now = this.ctx.currentTime;
-                    
-                    if (type === 'lofi') {
-                        // Slow, minor jazzy chords
-                        const notes = [261.63, 329.63, 392.00, 493.88]; // Cmaj7
-                        this.triggerNote(notes[step % notes.length], 0.1, 0.8, 'triangle');
-                        await new Promise(r => setTimeout(r, 800));
-                    } 
-                    else if (type === 'rap') {
-                        // Heavy bass-like pulse and sharp high hats (noise)
-                        if (step % 2 === 0) this.triggerNote(60, 0.3, 0.4, 'sine'); // Kick-ish
-                        if (step % 4 === 2) this.triggerNote(1200, 0.05, 0.1, 'square'); // Snare-ish
-                        await new Promise(r => setTimeout(r, 200));
-                    }
-                    else if (type === 'mexican') {
-                        // Upbeat 3/4 or 2/4 rhythm with trumpet-like tones
-                        const scale = [392.00, 440.00, 493.88, 523.25, 587.33]; // G major
-                        this.triggerNote(scale[Math.floor(Math.random() * scale.length)], 0.15, 0.3, 'sawtooth');
-                        await new Promise(r => setTimeout(r, 250));
-                    }
-                    else if (type === 'synth') {
-                        // Arpeggiated 80s synth
-                        const scale = [220, 261, 329, 392, 440, 523];
-                        this.triggerNote(scale[step % scale.length], 0.1, 0.4, 'square');
-                        await new Promise(r => setTimeout(r, 150));
-                    }
+                    if (type === 'lofi') { this.triggerNote([261, 329, 392, 493][step % 4], 0.1, 0.8, 'triangle'); await new Promise(r => setTimeout(r, 800)); } 
+                    else if (type === 'rap') { if (step % 2 === 0) this.triggerNote(60, 0.3, 0.4, 'sine'); if (step % 4 === 2) this.triggerNote(1200, 0.05, 0.1, 'square'); await new Promise(r => setTimeout(r, 200)); }
+                    else if (type === 'mexican') { this.triggerNote([392, 440, 493, 523, 587][Math.floor(Math.random() * 5)], 0.15, 0.3, 'sawtooth'); await new Promise(r => setTimeout(r, 250)); }
+                    else if (type === 'synth') { this.triggerNote([220, 261, 329, 392, 440, 523][step % 6], 0.1, 0.4, 'square'); await new Promise(r => setTimeout(r, 150)); }
                     step++;
                 }
             },
-
             triggerNote(freq, vol, duration, type = 'sine') {
-                const osc = this.ctx.createOscillator();
-                const g = this.ctx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
                 g.gain.setValueAtTime(vol * this.gainNode.gain.value, this.ctx.currentTime);
                 g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-                osc.connect(g);
-                g.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + duration);
+                osc.connect(g); g.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + duration);
             },
-
-            stop() {
-                this.isPlaying = false;
-            },
-
-            setVolume(v) {
-                if(this.gainNode) this.gainNode.gain.value = v;
-            }
+            stop() { this.isPlaying = false; },
+            setVolume(v) { if(this.gainNode) this.gainNode.gain.value = v; }
         };
-
-        // --- MUSIC UI HANDLERS ---
-        const musicBtn = document.getElementById('music-menu-btn');
-        const musicPanel = document.getElementById('music-panel');
-        musicBtn.onclick = (e) => {
-            e.stopPropagation();
-            musicPanel.style.display = musicPanel.style.display === 'block' ? 'none' : 'block';
-        };
-
-        document.querySelectorAll('.music-item').forEach(item => {
-            item.onclick = () => {
-                document.querySelectorAll('.music-item').forEach(i => i.classList.remove('playing'));
-                item.classList.add('playing');
-                MusicEngine.playProceduralTrack(item.dataset.track);
-            };
-        });
-
-        document.getElementById('volume-slider').oninput = (e) => {
-            MusicEngine.setVolume(e.target.value);
-        };
-
-        window.onclick = () => { musicPanel.style.display = 'none'; };
-        musicPanel.onclick = (e) => e.stopPropagation();
-
 
         // --- BACKGROUND EFFECTS ---
         const bgCanvas = document.getElementById('bg-canvas');
@@ -602,17 +572,11 @@
         let particles = [];
         function initBG() {
             bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
-            particles = Array.from({length: 50}, () => ({
-                x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height,
-                size: Math.random() * 2, speed: Math.random() * 0.5 + 0.1
-            }));
+            particles = Array.from({length: 50}, () => ({ x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height, size: Math.random() * 2, speed: Math.random() * 0.5 + 0.1 }));
         }
         function drawBG() {
             bgCtx.clearRect(0,0,bgCanvas.width, bgCanvas.height); bgCtx.fillStyle = '#00f2ff';
-            particles.forEach(p => {
-                bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); bgCtx.fill();
-                p.y -= p.speed; if(p.y < 0) p.y = bgCanvas.height;
-            });
+            particles.forEach(p => { bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); bgCtx.fill(); p.y -= p.speed; if(p.y < 0) p.y = bgCanvas.height; });
             requestAnimationFrame(drawBG);
         }
         window.addEventListener('resize', initBG); initBG(); drawBG();
@@ -622,187 +586,151 @@
         const ctx = canvas.getContext('2d');
         const backBtn = document.getElementById('back-to-menu');
         const mainMenu = document.getElementById('main-menu');
+        const gameOverScreen = document.getElementById('game-over-screen');
         let activeGame = null, isPlaying = false, keys = {};
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize); resize();
 
-        // --- NAVIGATION ---
-        document.getElementById('card-wave').onclick = () => {
-            mainMenu.classList.add('hidden'); document.getElementById('wave-level-select').classList.remove('hidden');
-            backBtn.style.display = 'block'; renderWaveLevels();
-        };
-        document.getElementById('card-math').onclick = () => {
-             mainMenu.classList.add('hidden'); document.getElementById('math-select-screen').classList.remove('hidden');
-             backBtn.style.display = 'block';
-        };
-        document.getElementById('card-clicker').onclick = () => switchGame('clicker');
-        document.getElementById('close-level-select').onclick = () => {
-            document.getElementById('wave-level-select').classList.add('hidden'); mainMenu.classList.remove('hidden'); backBtn.style.display = 'none';
-        };
-
-        function switchGame(mode, data = null) {
-            activeGame = mode; mainMenu.classList.add('hidden'); backBtn.style.display = 'block';
-            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById(`${mode}-ui`).classList.remove('hidden');
-            if(mode === 'wave') startWave(data);
-            if(mode === 'math') startMath(data);
-            if(mode === 'clicker') startClicker();
-        }
-
-        backBtn.onclick = () => {
-            if(activeGame === 'clicker') saveGame();
-            activeGame = null; isPlaying = false;
-            mainMenu.classList.remove('hidden'); backBtn.style.display = 'none';
-            document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui').forEach(el => el.classList.add('hidden'));
-            document.getElementById('math-input').blur();
-        };
-
         // --- WAVE ENGINE ---
         let score = 0, player = { x: 0, y: 0, trail: [] }, walls = [], waveLvl = null;
-        const WAVE_LEVELS = [{id:1, speed:5, gap:360, color:'#00f2ff'}, {id:2, speed:6, gap:320, color:'#00ff88'}, {id:3, speed:7, gap:280, color:'#ff007f'}];
+        let currentPage = 0;
+        const WAVE_LEVELS = [
+            {id:1, speed:5, gap:380, color:'#00f2ff', name: "Neon City"},
+            {id:2, speed:5.5, gap:360, color:'#00ff88', name: "Grid Run"},
+            {id:3, speed:6, gap:340, color:'#ff007f', name: "Pink Pulse"},
+            {id:4, speed:6.5, gap:320, color:'#bc13fe', name: "Vapor Trail"},
+            {id:5, speed:7, gap:300, color:'#ffaa00', name: "Orange Overload"},
+            {id:6, speed:7.5, gap:280, color:'#ffffff', name: "White Void"},
+            {id:7, speed:8, gap:260, color:'#ff4d4d', name: "Red Alert"},
+            {id:8, speed:8.5, gap:240, color:'#4d79ff', name: "Deep Sea"},
+            {id:9, speed:9, gap:220, color:'#ffff4d', name: "Supernova"},
+            {id:10, speed:10, gap:200, color:'#000000', name: "Eclipse"}
+        ];
+
         function renderWaveLevels() {
-            const container = document.getElementById('level-grid-container'); container.innerHTML = '';
-            WAVE_LEVELS.forEach(l => {
-                const b = document.createElement('button'); b.className = 'btn-ui'; b.innerText = `LEVEL ${l.id}`;
+            const container = document.getElementById('level-grid-container');
+            const dotsContainer = document.getElementById('page-dots');
+            container.innerHTML = ''; dotsContainer.innerHTML = '';
+            
+            const start = currentPage * 4;
+            const end = Math.min(start + 4, WAVE_LEVELS.length);
+            
+            for(let i=0; i<3; i++){
+                const dot = document.createElement('div');
+                dot.className = `dot ${i === currentPage ? 'active' : ''}`;
+                dotsContainer.appendChild(dot);
+            }
+
+            WAVE_LEVELS.slice(start, end).forEach(l => {
+                const b = document.createElement('div');
+                b.className = 'game-card';
+                b.style.width = '160px'; b.style.padding = '15px';
+                b.innerHTML = `<div style="font-size: 1.2rem; color:${l.color}">LVL ${l.id}</div><div style="font-size: 0.7rem; opacity: 0.6; margin-top:5px;">${l.name}</div>`;
                 b.onclick = () => switchGame('wave', l);
                 container.appendChild(b);
             });
         }
-        function startWave(l) { waveLvl = l; isPlaying = true; score = 0; player = {x:200, y:canvas.height/2, trail:[]}; walls = []; spawnWall(800); }
-        function spawnWall(x) { walls.push({x, w:80, top: Math.random()*300+50, bottom: 0}); walls[walls.length-1].bottom = walls[walls.length-1].top + waveLvl.gap; }
-        
+
+        document.getElementById('prev-page').onclick = () => { if(currentPage > 0) { currentPage--; renderWaveLevels(); }};
+        document.getElementById('next-page').onclick = () => { if(currentPage < 2) { currentPage++; renderWaveLevels(); }};
+
+        function startWave(l) { 
+            waveLvl = l; isPlaying = true; score = 0; 
+            player = {x:200, y:canvas.height/2, trail:[]}; 
+            walls = []; spawnWall(800); 
+            document.getElementById('wave-score-container').innerText = '0';
+        }
+        function spawnWall(x) { walls.push({x, w:80, top: Math.random()*(canvas.height - waveLvl.gap - 100) + 50, bottom: 0}); walls[walls.length-1].bottom = walls[walls.length-1].top + waveLvl.gap; }
+
+        function triggerGameOver(finalScore, title = "GAME OVER") {
+            isPlaying = false;
+            document.getElementById('go-title').innerText = title;
+            document.getElementById('go-score').innerText = finalScore;
+            gameOverScreen.classList.remove('hidden');
+            document.getElementById('math-input').blur();
+        }
+
+        document.getElementById('retry-btn').onclick = () => {
+            gameOverScreen.classList.add('hidden');
+            if(activeGame === 'wave') startWave(waveLvl);
+            else if(activeGame === 'math') startMath(mathConfig);
+        };
+        document.getElementById('quit-btn').onclick = () => {
+            gameOverScreen.classList.add('hidden');
+            backBtn.click();
+        };
+
         // --- MATH DASH ENGINE ---
         let mathEnergy = 100, mathAns = 0, mathConfig = { op: '+', diff: 'easy' };
-        
         document.querySelectorAll('#math-op-btns .btn-ui').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('#math-op-btns .btn-ui').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active'); mathConfig.op = btn.dataset.op;
-            }
+            btn.onclick = () => { document.querySelectorAll('#math-op-btns .btn-ui').forEach(b => b.classList.remove('active')); btn.classList.add('active'); mathConfig.op = btn.dataset.op; }
         });
         document.querySelectorAll('#math-diff-btns .btn-ui').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('#math-diff-btns .btn-ui').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active'); mathConfig.diff = btn.dataset.diff;
-            }
+            btn.onclick = () => { document.querySelectorAll('#math-diff-btns .btn-ui').forEach(b => b.classList.remove('active')); btn.classList.add('active'); mathConfig.diff = btn.dataset.diff; }
         });
-
         document.getElementById('start-math-btn').onclick = () => switchGame('math', mathConfig);
 
         function startMath(config) {
-            mathConfig = config; mathEnergy = 100; isPlaying = true; 
-            genMath();
-            const input = document.getElementById('math-input');
-            input.value = '';
+            mathConfig = config; mathEnergy = 100; isPlaying = true; score = 0;
+            genMath(); const input = document.getElementById('math-input'); input.value = '';
             setTimeout(() => input.focus(), 100);
         }
-
         function genMath() {
-            let n1, n2, symbol;
-            const diff = mathConfig.diff;
-            const op = mathConfig.op;
+            let n1, n2, symbol; const diff = mathConfig.diff; const op = mathConfig.op;
             let range = diff === 'medium' ? 25 : (diff === 'hard' ? 100 : (diff === 'insane' ? 500 : 10));
             if (op === '+') { n1 = Math.floor(Math.random() * range); n2 = Math.floor(Math.random() * range); mathAns = n1 + n2; symbol = '+'; } 
             else if (op === '-') { n1 = Math.floor(Math.random() * range) + (range/2); n2 = Math.floor(Math.random() * n1); mathAns = n1 - n2; symbol = '-'; } 
             else if (op === '*') { let mRange = diff === 'easy' ? 10 : (diff === 'medium' ? 15 : (diff === 'hard' ? 25 : 50)); n1 = Math.floor(Math.random() * mRange); n2 = Math.floor(Math.random() * (diff === 'easy' ? 10 : 12)); mathAns = n1 * n2; symbol = '×'; }
             document.getElementById('math-problem').innerText = `${n1} ${symbol} ${n2}`;
         }
-
         document.getElementById('math-input').oninput = (e) => {
             if(parseInt(e.target.value) === mathAns) {
+                score++;
                 let gain = mathConfig.diff === 'hard' ? 10 : (mathConfig.diff === 'insane' ? 8 : 15);
                 mathEnergy = Math.min(100, mathEnergy + gain);
-                e.target.value = '';
-                genMath();
-                MusicEngine.triggerNote(800, 0.1, 0.1);
+                e.target.value = ''; genMath(); MusicEngine.triggerNote(800, 0.1, 0.1);
             }
         };
 
         // --- COOKIE CRUNCH LOGIC ---
-        let cookies = 0; let clickPower = 1; let cookiesPerSecond = 0;
+        let cookies = 0; let clickPower = 1; let cps = 0;
         const shopItems = [
-            { id: 'click_1', name: 'Reinforced Finger', type: 'click', cost: 15, power: 1, owned: 0, icon: '👆', desc: 'Each click yields +1 cookie.' },
-            { id: 'click_2', name: 'Titanium Tapper', type: 'click', cost: 500, power: 10, owned: 0, icon: '⚡', desc: 'Surgical precision clicks (+10/click).' },
-            { id: 'auto_1', name: 'Auto-Cursor', type: 'auto', cost: 100, cps: 1, owned: 0, icon: '🖱️', desc: 'Clicks automatically once every second.' },
-            { id: 'auto_2', name: 'Cookie Grandma', type: 'auto', cost: 500, cps: 5, owned: 0, icon: '👵', desc: 'Bakes fresh cookies at a steady pace.' },
-            { id: 'auto_3', name: 'Cookie Farm', type: 'auto', cost: 2500, cps: 18, owned: 0, icon: '🚜', desc: 'Grows cookie plants in nutrient soil.' },
-            { id: 'auto_4', name: 'Cookie Factory', type: 'auto', cost: 10000, cps: 55, owned: 0, icon: '🏭', desc: 'Mass produces high-quality treats.' },
-            { id: 'auto_5', name: 'Cookie Bank', type: 'auto', cost: 50000, cps: 160, owned: 0, icon: '🏦', desc: 'Generates interest in cookies.' },
-            { id: 'auto_6', name: 'Alchemy Lab', type: 'auto', cost: 200000, cps: 450, owned: 0, icon: '🧪', desc: 'Turns lead into delicious chocolate chips.' },
-            { id: 'auto_7', name: 'Portal', type: 'auto', cost: 1000000, cps: 1200, owned: 0, icon: '🌀', desc: 'Opens a link to the Cookie Dimension.' },
-            { id: 'auto_8', name: 'Time Machine', type: 'auto', cost: 15000000, cps: 8000, owned: 0, icon: '⏳', desc: 'Brings cookies from before they were eaten.' }
+            { id: 'c1', name: 'Finger', type: 'click', cost: 15, power: 1, owned: 0, icon: '👆' },
+            { id: 'c2', name: 'Tapper', type: 'click', cost: 500, power: 10, owned: 0, icon: '⚡' },
+            { id: 'a1', name: 'Cursor', type: 'auto', cost: 100, cps: 1, owned: 0, icon: '🖱️' },
+            { id: 'a2', name: 'Grandma', type: 'auto', cost: 500, cps: 5, owned: 0, icon: '👵' },
+            { id: 'a3', name: 'Farm', type: 'auto', cost: 2500, cps: 18, owned: 0, icon: '🚜' },
+            { id: 'a4', name: 'Factory', type: 'auto', cost: 10000, cps: 55, owned: 0, icon: '🏭' }
         ];
 
-        function saveGame() {
-            const data = { cookies, clickPower, cps: cookiesPerSecond, lastUpdate: Date.now(), items: shopItems.map(i => ({ id: i.id, owned: i.owned, cost: i.cost })) };
-            localStorage.setItem('cookieCrunchSave', JSON.stringify(data));
-            showSaveIndicator();
-        }
-
-        function loadGame() {
-            const saved = localStorage.getItem('cookieCrunchSave');
-            if (saved) {
-                const data = JSON.parse(saved);
-                cookies = data.cookies || 0; clickPower = data.clickPower || 1; cookiesPerSecond = data.cps || 0;
-                data.items.forEach(savedItem => { const item = shopItems.find(i => i.id === savedItem.id); if (item) { item.owned = savedItem.owned; item.cost = savedItem.cost; } });
-                if (data.lastUpdate) {
-                    const secondsPassed = Math.floor((Date.now() - data.lastUpdate) / 1000);
-                    if (secondsPassed > 5 && cookiesPerSecond > 0) { const earned = secondsPassed * cookiesPerSecond; cookies += earned; showOfflineAlert(earned); }
-                }
-            }
-        }
-
-        function showOfflineAlert(amt) {
-            const alert = document.getElementById('offline-alert');
-            alert.innerText = `Welcome back! You earned ${Math.floor(amt).toLocaleString()} cookies while away!`;
-            alert.style.display = 'block'; setTimeout(() => alert.style.display = 'none', 5000);
-        }
-
-        function showSaveIndicator() { const el = document.getElementById('save-indicator'); el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 2000); }
         function startClicker() { loadGame(); isPlaying = true; updateClickerUI(); }
-
-        document.getElementById('big-cookie').addEventListener('mousedown', (e) => {
-            cookies += clickPower;
-            MusicEngine.triggerNote(400, 0.05, 0.05);
-            spawnFloatingText(e.clientX, e.clientY, `+${clickPower}`);
-            updateClickerUI();
-        });
-
-        function spawnFloatingText(x, y, text) {
-            const el = document.createElement('div'); el.className = 'floating-text'; el.innerText = text;
-            el.style.left = `${x}px`; el.style.top = `${y}px`;
-            document.querySelector('.clicker-main').appendChild(el);
-            setTimeout(() => el.remove(), 800);
-        }
-
-        function updateClickerUI() {
-            document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
-            document.getElementById('cps-val').innerText = cookiesPerSecond.toLocaleString();
-            document.getElementById('cpc-val').innerText = clickPower.toLocaleString();
-            renderShop();
-        }
-
+        document.getElementById('big-cookie').onclick = (e) => { cookies += clickPower; spawnFloatingText(e.clientX, e.clientY, `+${clickPower}`); updateClickerUI(); MusicEngine.triggerNote(400, 0.05, 0.05); };
+        function spawnFloatingText(x, y, text) { const el = document.createElement('div'); el.className = 'floating-text'; el.innerText = text; el.style.left = `${x}px`; el.style.top = `${y}px`; document.querySelector('.clicker-main').appendChild(el); setTimeout(() => el.remove(), 800); }
+        function updateClickerUI() { document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString(); document.getElementById('cps-val').innerText = cps.toLocaleString(); document.getElementById('cpc-val').innerText = clickPower.toLocaleString(); renderShop(); }
         function renderShop() {
             const container = document.getElementById('shop-container'); container.innerHTML = '';
-            shopItems.forEach((item) => {
-                const canAfford = cookies >= item.cost;
-                const div = document.createElement('div');
-                div.className = `shop-item ${canAfford ? 'affordable' : 'locked'}`;
-                div.innerHTML = `<div style="display: flex; align-items: center;"><span class="item-icon">${item.icon}</span><div class="item-details"><span class="item-name">${item.name}</span><span class="item-cost">Cost: ${Math.floor(item.cost).toLocaleString()}</span><div style="font-size: 0.6rem; opacity: 0.6; margin-top: 4px;">${item.desc}</div></div><div class="item-owned">${item.owned}</div></div>`;
-                div.onclick = () => {
-                    if (cookies >= item.cost) {
-                        cookies -= item.cost; item.owned++;
-                        if (item.type === 'click') clickPower += item.power; else cookiesPerSecond += item.cps;
-                        item.cost = Math.ceil(item.cost * 1.15);
-                        MusicEngine.triggerNote(600 + (item.owned * 5), 0.1, 0.1);
-                        updateClickerUI(); saveGame();
-                    }
-                };
-                container.appendChild(div);
+            shopItems.forEach(item => {
+                const d = document.createElement('div'); d.className = `shop-item ${cookies >= item.cost ? 'affordable' : 'locked'}`;
+                d.innerHTML = `<div style="display:flex;align-items:center;"><span class="item-icon">${item.icon}</span><div class="item-details"><span class="item-name">${item.name}</span><span class="item-cost">${Math.floor(item.cost)}</span></div><div class="item-owned">${item.owned}</div></div>`;
+                d.onclick = () => { if(cookies >= item.cost) { cookies -= item.cost; item.owned++; if(item.type==='click') clickPower+=item.power; else cps+=item.cps; item.cost *= 1.15; updateClickerUI(); saveGame(); }};
+                container.appendChild(d);
             });
         }
+        function saveGame() { localStorage.setItem('cookieSave', JSON.stringify({cookies, clickPower, cps, items: shopItems.map(i=>({id:i.id, owned:i.owned, cost:i.cost}))})); }
+        function loadGame() { const s = localStorage.getItem('cookieSave'); if(s){ const d = JSON.parse(s); cookies=d.cookies; clickPower=d.clickPower; cps=d.cps; d.items.forEach(si=>{const i=shopItems.find(x=>x.id===si.id); if(i){i.owned=si.owned; i.cost=si.cost;}});}}
 
-        setInterval(() => { if (activeGame === 'clicker') saveGame(); }, 5000);
+        // --- NAVIGATION ---
+        document.getElementById('card-wave').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('wave-level-select').classList.remove('hidden'); backBtn.style.display='block'; renderWaveLevels(); };
+        document.getElementById('card-math').onclick = () => { mainMenu.classList.add('hidden'); document.getElementById('math-select-screen').classList.remove('hidden'); backBtn.style.display='block'; };
+        document.getElementById('card-clicker').onclick = () => switchGame('clicker');
+        document.getElementById('close-level-select').onclick = () => { document.getElementById('wave-level-select').classList.add('hidden'); mainMenu.classList.remove('hidden'); backBtn.style.display='none'; };
+        backBtn.onclick = () => { if(activeGame==='clicker') saveGame(); activeGame=null; isPlaying=false; mainMenu.classList.remove('hidden'); backBtn.style.display='none'; document.querySelectorAll('.screen, #wave-ui, #math-ui, #clicker-ui, #game-over-screen').forEach(el=>el.classList.add('hidden')); };
+
+        function switchGame(mode, data) {
+            activeGame = mode; mainMenu.classList.add('hidden'); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`${mode}-ui`).classList.remove('hidden'); backBtn.style.display = 'block';
+            if(mode === 'wave') startWave(data); if(mode === 'math') startMath(data); if(mode === 'clicker') startClicker();
+        }
 
         // --- MAIN LOOP ---
         function loop() {
@@ -810,36 +738,43 @@
                 if (activeGame === 'wave') {
                     player.x += waveLvl.speed; player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
                     player.trail.push({x: player.x, y: player.y}); if(player.trail.length > 20) player.trail.shift();
-                    if(player.y < 0 || player.y > canvas.height) isPlaying = false;
-                    walls.forEach(w => { if(player.x+10 > w.x && player.x-10 < w.x+w.w && (player.y-10 < w.top || player.y+10 > w.bottom)) isPlaying = false; });
+                    if(player.y < 0 || player.y > canvas.height) triggerGameOver(score);
+                    walls.forEach(w => { if(player.x+10 > w.x && player.x-10 < w.x+w.w && (player.y-10 < w.top || player.y+10 > w.bottom)) triggerGameOver(score); });
                     if(player.x > walls[0].x + 400) { walls.shift(); spawnWall(walls[walls.length-1].x+600); score++; document.getElementById('wave-score-container').innerText = score; }
                 }
                 if (activeGame === 'math') {
-                    let drain = mathConfig.diff === 'medium' ? 0.2 : (mathConfig.diff === 'hard' ? 0.25 : (mathConfig.diff === 'insane' ? 0.35 : 0.15));
-                    mathEnergy -= drain; if (mathEnergy <= 0) { isPlaying = false; document.getElementById('math-input').blur(); }
+                    let d = mathConfig.diff === 'medium' ? 0.2 : (mathConfig.diff === 'hard' ? 0.25 : (mathConfig.diff === 'insane' ? 0.35 : 0.15));
+                    mathEnergy -= d; if (mathEnergy <= 0) triggerGameOver(score, "TIME EXPIRED");
                 }
-                if (activeGame === 'clicker') { cookies += cookiesPerSecond / 60; document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString(); }
+                if (activeGame === 'clicker') { cookies += cps / 60; document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString(); }
             }
-
             ctx.clearRect(0,0,canvas.width, canvas.height);
-            if (activeGame === 'wave') {
+            if (activeGame === 'wave' && (isPlaying || !gameOverScreen.classList.contains('hidden'))) {
                 ctx.save(); ctx.translate(-player.x + 200, 0); ctx.fillStyle = waveLvl.color;
                 walls.forEach(w => { ctx.fillRect(w.x, 0, w.w, w.top); ctx.fillRect(w.x, w.bottom, w.w, canvas.height); });
-                ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.beginPath();
-                player.trail.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke();
+                ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.beginPath(); player.trail.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke();
                 ctx.restore();
             }
-            if (activeGame === 'math') {
+            if (activeGame === 'math' && isPlaying) {
                 ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(canvas.width/2 - 100, 50, 200, 10);
                 ctx.fillStyle = '#ff007f'; ctx.fillRect(canvas.width/2 - 100, 50, (mathEnergy/100)*200, 10);
             }
             requestAnimationFrame(loop);
         }
 
-        window.onkeydown = (e) => keys[e.key] = true;
-        window.onkeyup = (e) => keys[e.key] = false;
-        window.ontouchstart = (e) => { if(e.target.id === 'big-cookie' || e.target.closest('.shop-item') || e.target.id === 'math-input' || e.target.closest('#music-panel')) return; keys['touchstart'] = true; };
+        // --- EVENTS ---
+        window.onkeydown = (e) => keys[e.key] = true; window.onkeyup = (e) => keys[e.key] = false;
+        window.ontouchstart = (e) => { if(!e.target.closest('.btn-ui, #math-input, #big-cookie, .shop-item, #music-panel')) keys['touchstart'] = true; };
         window.ontouchend = () => keys['touchstart'] = false;
+        
+        const musicBtn = document.getElementById('music-menu-btn');
+        const musicPanel = document.getElementById('music-panel');
+        musicBtn.onclick = (e) => { e.stopPropagation(); musicPanel.style.display = musicPanel.style.display === 'block' ? 'none' : 'block'; };
+        document.querySelectorAll('.music-item').forEach(i => i.onclick = () => { document.querySelectorAll('.music-item').forEach(x=>x.classList.remove('playing')); i.classList.add('playing'); MusicEngine.playProceduralTrack(i.dataset.track); });
+        document.getElementById('volume-slider').oninput = (e) => MusicEngine.setVolume(e.target.value);
+        window.onclick = () => musicPanel.style.display = 'none';
+        musicPanel.onclick = (e) => e.stopPropagation();
+
         loop();
     </script>
 </body>
