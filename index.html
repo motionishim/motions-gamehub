@@ -231,8 +231,25 @@
             background: #020208;
             z-index: 500;
         }
-        .clicker-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; position: relative; }
-        .clicker-shop { width: 420px; padding: 30px; background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border-left: 1px solid var(--glass-border); overflow-y: auto; }
+        .clicker-main { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 40px; 
+            position: relative; 
+        }
+        .clicker-shop { 
+            width: 420px; 
+            padding: 20px; 
+            background: rgba(255,255,255,0.02); 
+            backdrop-filter: blur(20px); 
+            border-left: 1px solid var(--glass-border); 
+            overflow-y: auto; 
+            display: flex;
+            flex-direction: column;
+        }
         
         #big-cookie { 
             width: 240px; height: 240px; 
@@ -280,14 +297,26 @@
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 1px solid var(--glass-border);
+            flex-shrink: 0;
         }
 
+        #shop-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        /* Custom Scrollbar for Shop */
+        #shop-container::-webkit-scrollbar { width: 6px; }
+        #shop-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        #shop-container::-webkit-scrollbar-track { background: transparent; }
+
         .shop-item {
-            padding: 18px;
+            padding: 15px;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 16px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
@@ -300,7 +329,7 @@
             transform: translateX(5px);
         }
         .shop-item.locked { opacity: 0.4; cursor: not-allowed; }
-        .shop-item.affordable { border-left: 5px solid var(--neon-green); }
+        .shop-item.affordable { border-left: 5px solid var(--neon-green); background: rgba(0, 255, 136, 0.05); }
 
         .item-icon { font-size: 1.5rem; margin-right: 15px; }
         .item-details { flex: 1; }
@@ -310,8 +339,14 @@
 
         @media (max-width: 850px) {
             #clicker-ui { flex-direction: column; overflow-y: auto; }
-            .clicker-shop { width: 100%; border-left: none; border-top: 1px solid var(--glass-border); }
-            .clicker-main { min-height: 60vh; padding: 20px; }
+            .clicker-shop { 
+                width: 100%; 
+                border-left: none; 
+                border-top: 1px solid var(--glass-border); 
+                height: 50%; /* Explicit height for scrolling */
+                min-height: 300px;
+            }
+            .clicker-main { height: 50%; min-height: 300px; padding: 20px; }
         }
 
         /* Standard Game UIs */
@@ -339,65 +374,18 @@
         .score-text { font-size: 4rem; font-weight: 900; margin: 20px 0; color: var(--neon-blue); }
 
         /* Customizer UI */
-        .customizer-section {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .custom-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.5;
-            margin-bottom: 12px;
-        }
-        .option-row {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .color-dot {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.6rem;
-            color: black;
-            font-weight: bold;
-        }
+        .customizer-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .custom-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.5; margin-bottom: 12px; }
+        .option-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+        .color-dot { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: black; font-weight: bold; }
         .color-dot:hover { transform: scale(1.2); }
         .color-dot.active { border-color: white; transform: scale(1.1); box-shadow: 0 0 10px currentColor; }
-        
-        .trail-option {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 8px 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            transition: 0.2s;
-        }
-        .trail-option.active {
-            background: white;
-            color: black;
-            font-weight: bold;
-        }
+        .trail-option { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 0.7rem; transition: 0.2s; }
+        .trail-option.active { background: white; color: black; font-weight: bold; }
 
         /* Math Shake */
         .shake { animation: shake 0.3s; border-color: #ff007f !important; box-shadow: 0 0 20px #ff007f; }
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            50% { transform: translateX(10px); }
-            75% { transform: translateX(-10px); }
-            100% { transform: translateX(0); }
-        }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-10px); } 50% { transform: translateX(10px); } 75% { transform: translateX(-10px); } 100% { transform: translateX(0); } }
         
         /* Math Select Specifics */
         .option-group { margin: 15px 0; }
@@ -406,24 +394,11 @@
 
         /* Offline Alert */
         #offline-alert {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--neon-blue);
-            color: black;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-weight: 900;
-            z-index: 3000;
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.5);
-            display: none;
-            animation: slideDown 0.5s ease-out;
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--neon-blue); color: black; padding: 15px 30px; border-radius: 50px; font-weight: 900; z-index: 3000;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.5); display: none; animation: slideDown 0.5s ease-out;
         }
-        @keyframes slideDown {
-            from { transform: translate(-50%, -100%); }
-            to { transform: translate(-50%, 0); }
-        }
+        @keyframes slideDown { from { transform: translate(-50%, -100%); } to { transform: translate(-50%, 0); } }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -563,6 +538,16 @@
             <div class="stat-card">
                 <div id="cookie-count" style="font-size: 3rem; color: var(--neon-orange); font-weight: 900;">0</div>
                 <div style="font-size: 0.8rem; opacity: 0.6;">COOKIES</div>
+                <div style="display: flex; justify-content: space-around; margin-top: 15px; border-top: 1px solid var(--glass-border); padding-top: 10px;">
+                    <div>
+                        <div style="font-size: 0.6rem; opacity: 0.5;">PER SEC</div>
+                        <div id="cps-val" style="color: var(--neon-green); font-weight: 800;">0</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.6rem; opacity: 0.5;">PER CLICK</div>
+                        <div id="cpc-val" style="color: var(--neon-blue); font-weight: 800;">1</div>
+                    </div>
+                </div>
             </div>
             <div id="big-cookie">🍪</div>
         </div>
@@ -774,7 +759,12 @@
             { id: 'a12', name: 'Fractal Engine', type: 'auto', cost: 500000000000, cps: 8000000, owned: 0, icon: '💠', desc: 'Cookies made of cookies.' }
         ];
 
-        function startClicker() { loadGame(); isPlaying = true; updateClickerUI(); }
+        function startClicker() { 
+            loadGame(); 
+            isPlaying = true; 
+            initShop(); // Create buttons once
+            updateClickerUI(); 
+        }
         
         document.getElementById('big-cookie').addEventListener('mousedown', (e) => { 
             cookies += clickPower; 
@@ -794,20 +784,71 @@
             document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
             document.getElementById('cps-val').innerText = cookiesPerSecond.toLocaleString();
             document.getElementById('cpc-val').innerText = clickPower.toLocaleString();
-            renderShop();
+            updateShopState();
         }
 
-        function renderShop() {
+        // Initialize shop items only once
+        function initShop() {
             const container = document.getElementById('shop-container');
             container.innerHTML = '';
-            shopItems.forEach((item) => {
-                const canAfford = cookies >= item.cost;
+            shopItems.forEach((item, index) => {
                 const div = document.createElement('div');
-                div.className = `shop-item ${canAfford ? 'affordable' : 'locked'}`;
-                div.innerHTML = `<div style="display:flex;align-items:center;"><span class="item-icon">${item.icon}</span><div class="item-details"><span class="item-name">${item.name}</span><span class="item-cost">Cost: ${Math.floor(item.cost).toLocaleString()}</span><div style="font-size: 0.6rem; opacity: 0.6; margin-top: 4px;">${item.desc}</div></div><div class="item-owned">${item.owned}</div></div>`;
-                div.onclick = () => { if (cookies >= item.cost) { cookies -= item.cost; item.owned++; if (item.type === 'click') clickPower += item.power; else cookiesPerSecond += item.cps; item.cost = Math.ceil(item.cost * 1.15); MusicEngine.triggerNote(600 + (item.owned * 5), 0.1, 0.1); updateClickerUI(); saveGame(); } };
+                div.className = 'shop-item';
+                div.id = `shop-item-${index}`;
+                div.innerHTML = `
+                    <div style="display:flex;align-items:center;pointer-events:none;">
+                        <span class="item-icon">${item.icon}</span>
+                        <div class="item-details">
+                            <span class="item-name">${item.name}</span>
+                            <span class="item-cost">Cost: ${Math.floor(item.cost).toLocaleString()}</span>
+                            <div style="font-size: 0.6rem; opacity: 0.6; margin-top: 4px;">${item.desc}</div>
+                        </div>
+                        <div class="item-owned">${item.owned}</div>
+                    </div>
+                `;
+                
+                // Add click handler manually
+                div.addEventListener('click', () => {
+                    buyItem(index);
+                });
+                
                 container.appendChild(div);
             });
+        }
+
+        // Update classes and text without recreating DOM
+        function updateShopState() {
+            shopItems.forEach((item, index) => {
+                const el = document.getElementById(`shop-item-${index}`);
+                if (!el) return;
+                
+                // Update affordability class
+                if (cookies >= item.cost) {
+                    el.classList.add('affordable');
+                    el.classList.remove('locked');
+                } else {
+                    el.classList.remove('affordable');
+                    el.classList.add('locked');
+                }
+
+                // Update text values
+                el.querySelector('.item-cost').innerText = `Cost: ${Math.floor(item.cost).toLocaleString()}`;
+                el.querySelector('.item-owned').innerText = item.owned;
+            });
+        }
+
+        function buyItem(index) {
+            const item = shopItems[index];
+            if (cookies >= item.cost) {
+                cookies -= item.cost;
+                item.owned++;
+                if (item.type === 'click') clickPower += item.power;
+                else cookiesPerSecond += item.cps;
+                item.cost = Math.ceil(item.cost * 1.15);
+                MusicEngine.triggerNote(600 + (item.owned * 5), 0.1, 0.1);
+                updateClickerUI();
+                saveGame();
+            }
         }
 
         function saveGame() { 
@@ -880,9 +921,8 @@
                 if (activeGame === 'clicker') { 
                     cookies += cookiesPerSecond / 60; 
                     document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString();
-                    if (Math.floor(Date.now() / 500) % 2 === 0) { // Optimize Shop Updates
-                        const itemEls = document.querySelectorAll('.shop-item');
-                        shopItems.forEach((item, i) => { if (cookies >= item.cost) itemEls[i]?.classList.add('affordable'); else itemEls[i]?.classList.remove('affordable'); });
+                    if (Math.floor(Date.now() / 200) % 5 === 0) { // Optimize Shop Updates
+                        updateShopState();
                     }
                 }
             }
