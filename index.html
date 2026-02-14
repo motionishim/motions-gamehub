@@ -543,7 +543,7 @@
         }
 
         // --- NEON WAVE GAME ---
-        let player = { x: 0, y: 0, trail: [] }, walls = [], waveLvl = null, score = 0;
+        let player = { x: 0, y: 0, trail: [], angle: 0 }, walls = [], waveLvl = null, score = 0;
         const WAVE_LEVELS = [
             { id: 1, speed: 5, gap: 350, color: '#00f2ff' },
             { id: 2, speed: 5.5, gap: 340, color: '#00e2ff' },
@@ -599,7 +599,7 @@
             waveLvl = lvl; 
             isPlaying = true;
             score = 0;
-            player = { x: 200, y: canvas.height/2, trail: [] };
+            player = { x: 200, y: canvas.height/2, trail: [], angle: 0 };
             walls = [];
             for(let i=0; i<3; i++) spawnWall(800 + i * HORIZONTAL_SPACING);
             document.getElementById('wave-over').classList.add('hidden');
@@ -625,8 +625,12 @@
         function loop() {
             if (isPlaying) {
                 if (activeGame === 'wave') {
+                    const dy = (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
                     player.x += waveLvl.speed;
-                    player.y += (keys[' '] || keys['ArrowUp'] || keys['touchstart']) ? -6 : 6;
+                    player.y += dy;
+                    
+                    // Calculate angle based on vertical movement
+                    player.angle = Math.atan2(dy, waveLvl.speed);
                     
                     player.trail.push({ x: player.x, y: player.y });
                     const maxTrail = 15 + (score * 5);
@@ -667,19 +671,29 @@
                     ctx.shadowBlur = 0;
                     for (let i = 0; i < player.trail.length - 1; i++) {
                         const alpha = (i / player.trail.length) * 0.8;
-                        const size = (i / player.trail.length) * 10;
+                        const size = (i / player.trail.length) * 8;
                         ctx.beginPath();
                         ctx.arc(player.trail[i].x, player.trail[i].y, size, 0, Math.PI * 2);
-                        // Modify selectedTrailColor string to add alpha
                         const baseColor = selectedTrailColor.replace("1)", alpha + ")");
                         ctx.fillStyle = baseColor;
                         ctx.fill();
                     }
                 }
 
-                // Draw Player
+                // Draw Player as a Triangle
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                ctx.rotate(player.angle);
                 ctx.shadowBlur = 20; ctx.shadowColor = 'white'; ctx.fillStyle = 'white'; 
-                ctx.beginPath(); ctx.arc(player.x, player.y, 10, 0, Math.PI*2); ctx.fill(); 
+                ctx.beginPath(); 
+                // Draw triangle relative to its center
+                ctx.moveTo(15, 0);       // Point
+                ctx.lineTo(-10, -10);    // Back top
+                ctx.lineTo(-10, 10);     // Back bottom
+                ctx.closePath();
+                ctx.fill(); 
+                ctx.restore();
+
                 ctx.restore();
             }
             
