@@ -111,6 +111,24 @@
             font-size: 0.9rem;
         }
 
+        .owner-tag {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+
+        .owner-tag span {
+            color: var(--neon-blue);
+            font-weight: bold;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
         /* --- SHARED UI --- */
         .hidden { display: none !important; }
         .screen {
@@ -294,6 +312,9 @@
     <!-- Back Button -->
     <button id="back-to-menu">BACK TO HUB</button>
     <button id="audio-toggle">SOUND: OFF</button>
+    
+    <!-- Owner Signature -->
+    <div class="owner-tag">Owner: <span>Matthew</span></div>
 
     <!-- Main Hub -->
     <div id="main-menu">
